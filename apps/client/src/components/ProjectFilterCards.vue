@@ -1,25 +1,21 @@
 <template>
-  <div class="px-3 py-3 bg-gradient-to-r from-[var(--theme-bg-primary)]/95 to-[var(--theme-bg-secondary)]/95 backdrop-blur-sm border-b border-[var(--theme-border-primary)]/20">
-    <div class="flex flex-wrap gap-2 animate-fadeIn">
+  <div class="px-2 py-2 overflow-x-auto">
+    <div class="flex flex-col gap-1">
       <button
-        class="px-3 py-2 rounded-lg border transition-all duration-200 text-sm font-semibold shadow-sm hover:shadow-md hover:scale-105"
-        :class="selectedProject === '' 
-          ? 'bg-gradient-to-r from-[var(--theme-primary)] to-[var(--theme-primary-dark)] text-white border-[var(--theme-primary-dark)] shadow-md scale-105' 
-          : 'bg-[var(--theme-bg-tertiary)]/80 text-[var(--theme-text-primary)] border-[var(--theme-border-primary)]/30 hover:border-[var(--theme-primary)]/50'"
+        class="px-2 py-1.5 rounded-md border text-xs text-[var(--theme-text-secondary)] hover:bg-[var(--theme-bg-tertiary)] text-left"
+        :class="selectedProject === '' ? 'bg-[var(--theme-bg-tertiary)] border-[var(--theme-border-primary)]/60' : 'border-[var(--theme-border-primary)]/40'"
         @click="$emit('update:selectedProject', '')"
       >
-        All <span class="ml-1 text-xs opacity-80">({{ totalFilteredCount }})</span>
+        All <span class="ml-1 opacity-70">({{ totalFilteredCount }})</span>
       </button>
       <button
         v-for="p in projectsWithCounts"
         :key="p.name"
-        class="px-3 py-2 rounded-lg border transition-all duration-200 text-sm font-semibold shadow-sm hover:shadow-md hover:scale-105"
-        :class="selectedProject === p.name 
-          ? 'bg-gradient-to-r from-[var(--theme-primary)] to-[var(--theme-primary-dark)] text-white border-[var(--theme-primary-dark)] shadow-md scale-105' 
-          : 'bg-[var(--theme-bg-tertiary)]/80 text-[var(--theme-text-primary)] border-[var(--theme-border-primary)]/30 hover:border-[var(--theme-primary)]/50'"
+        class="px-2 py-1.5 rounded-md border text-xs text-[var(--theme-text-secondary)] hover:bg-[var(--theme-bg-tertiary)] text-left"
+        :class="selectedProject === p.name ? 'bg-[var(--theme-bg-tertiary)] border-[var(--theme-border-primary)]/60' : 'border-[var(--theme-border-primary)]/40'"
         @click="$emit('update:selectedProject', p.name)"
       >
-        {{ p.name }} <span class="ml-1 text-xs opacity-80">({{ p.count }})</span>
+        {{ p.name }} <span class="ml-1 opacity-70">({{ p.count }})</span>
       </button>
     </div>
   </div>

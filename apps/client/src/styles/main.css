@@ -151,13 +151,13 @@
 }
 
 ::-webkit-scrollbar-thumb {
-  background: var(--theme-border-primary);
+  background: color-mix(in oklab, var(--theme-border-primary) 60%, transparent);
   border-radius: 4px;
   transition: background 0.2s;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: var(--theme-border-secondary);
+  background: color-mix(in oklab, var(--theme-border-secondary) 70%, transparent);
 }
 
 /* Focus styles */

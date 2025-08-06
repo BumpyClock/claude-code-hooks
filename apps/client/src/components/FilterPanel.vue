@@ -1,14 +1,12 @@
 <template>
-  <div class="bg-gradient-to-r from-[var(--theme-bg-primary)]/95 to-[var(--theme-bg-secondary)]/95 backdrop-blur-sm border-b border-[var(--theme-border-primary)]/20 px-4 py-3 mobile:py-2 animate-slideDown">
-    <div class="flex flex-wrap gap-3 items-center mobile:flex-col mobile:items-stretch">
-      <div class="flex-1 min-w-0 mobile:w-full">
-        <label class="block text-sm mobile:text-xs font-medium text-[var(--theme-text-secondary)] mb-1">
-          Session ID
-        </label>
+  <div class="px-3 py-3 animate-fadeIn border-t border-[var(--theme-border-primary)]/5">
+    <div class="flex flex-col gap-3">
+      <div>
+        <label class="block text-[10px] font-medium text-[var(--theme-text-tertiary)] mb-1">Session</label>
         <select
           v-model="localFilters.sessionId"
           @change="updateFilters"
-          class="w-full px-2.5 py-1.5 mobile:px-2 mobile:py-1.5 text-sm mobile:text-xs border border-[var(--theme-border-primary)]/30 rounded-lg focus:ring-2 focus:ring-[var(--theme-primary)]/20 focus:border-[var(--theme-primary)] bg-[var(--theme-bg-primary)]/80 backdrop-blur-sm text-[var(--theme-text-primary)] transition-all duration-150 shadow-sm hover:shadow-md"
+          class="w-full px-2 py-1.5 text-xs border border-[var(--theme-border-primary)]/40 rounded-md bg-[var(--theme-bg-primary)] text-[var(--theme-text-secondary)] hover:bg-[var(--theme-bg-tertiary)]"
         >
           <option value="">All Sessions</option>
           <option v-for="session in filterOptions.session_ids" :key="session" :value="session">
@@ -16,15 +14,12 @@
           </option>
         </select>
       </div>
-      
-      <div class="flex-1 min-w-0 mobile:w-full">
-        <label class="block text-sm mobile:text-xs font-medium text-[var(--theme-text-secondary)] mb-1">
-          Event Type
-        </label>
+      <div>
+        <label class="block text-[10px] font-medium text-[var(--theme-text-tertiary)] mb-1">Event type</label>
         <select
           v-model="localFilters.eventType"
           @change="updateFilters"
-          class="w-full px-2.5 py-1.5 mobile:px-2 mobile:py-1.5 text-sm mobile:text-xs border border-[var(--theme-border-primary)]/30 rounded-lg focus:ring-2 focus:ring-[var(--theme-primary)]/20 focus:border-[var(--theme-primary)] bg-[var(--theme-bg-primary)]/80 backdrop-blur-sm text-[var(--theme-text-primary)] transition-all duration-150 shadow-sm hover:shadow-md"
+          class="w-full px-2 py-1.5 text-xs border border-[var(--theme-border-primary)]/40 rounded-md bg-[var(--theme-bg-primary)] text-[var(--theme-text-secondary)] hover:bg-[var(--theme-bg-tertiary)]"
         >
           <option value="">All Types</option>
           <option v-for="type in filterOptions.hook_event_types" :key="type" :value="type">
@@ -32,13 +27,12 @@
           </option>
         </select>
       </div>
-      
       <button
         v-if="hasActiveFilters"
         @click="clearFilters"
-        class="px-2.5 py-1.5 mobile:px-2 mobile:py-1.5 mobile:w-full text-sm mobile:text-xs font-medium text-[var(--theme-text-secondary)] bg-gradient-to-r from-[var(--theme-bg-tertiary)]/80 to-[var(--theme-bg-quaternary)]/80 hover:from-[var(--theme-bg-quaternary)] hover:to-[var(--theme-bg-tertiary)] rounded-lg border border-[var(--theme-border-primary)]/30 transition-all duration-200 shadow-sm hover:shadow-md hover:scale-105"
+        class="px-2 py-1.5 text-xs rounded-md border border-[var(--theme-border-primary)]/40 text-[var(--theme-text-secondary)] hover:bg-[var(--theme-bg-tertiary)]"
       >
-        Clear Filters
+        Clear filters
       </button>
     </div>
   </div>

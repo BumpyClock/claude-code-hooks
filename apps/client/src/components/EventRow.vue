@@ -1,5 +1,5 @@
 <template>
-  <div class="relative pl-32">
+  <div class="relative pl-32 max-w-full w-full">
     <div class="absolute left-0 top-4 w-28 pr-4 text-right">
       <div class="text-[10px] leading-3 font-mono tracking-tight text-[var(--theme-text-quaternary)] select-none opacity-50 hover:opacity-100 transition-opacity duration-200">
         {{ formatTime(event.timestamp) }}
@@ -15,9 +15,9 @@
       }"
     ></div>
     <div 
-      class="group ml-8 relative p-3 mobile:p-2 rounded-lg border border-[var(--theme-border-primary)]/20 hover:border-[var(--theme-primary)]/40 bg-[var(--theme-bg-primary)]/95 backdrop-blur-sm transition-all duration-200 cursor-pointer shadow-sm hover:shadow-md"
+      class="group ml-8 relative p-3 mobile:p-2 rounded-xl border border-[var(--theme-border-primary)]/20 hover:border-[var(--theme-primary)]/30 bg-[var(--theme-bg-primary)]/90 transition-all duration-200 cursor-pointer shadow-sm hover:shadow-md w-[calc(100%-2rem)] max-w-[calc(100%-2rem)] overflow-hidden"
       :class="{ 
-        'ring-1 ring-[var(--theme-primary)]/20 border-[var(--theme-primary)]/40 shadow-lg bg-[var(--theme-bg-primary)]': isExpanded
+        'ring-1 ring-[var(--theme-primary)]/15 border-[var(--theme-primary)]/30 shadow-md bg-[var(--theme-bg-primary)]': isExpanded
       }"
       @click="toggleExpanded"
     >
@@ -50,37 +50,33 @@
         </div>
 
         <div class="flex items-center justify-between mb-1.5 mobile:hidden">
-          <div class="flex items-center space-x-4">
-            <span 
-              class="text-base font-bold text-[var(--theme-text-primary)] px-2 py-0.5 rounded-full border-2 bg-gradient-to-br shadow-md transition-all duration-200 hover:shadow-lg hover:scale-105"
-              :style="{ 
-                ...appBgStyle, 
-                ...appBorderStyle,
-                backgroundImage: `linear-gradient(135deg, ${appHexColor}20, ${appHexColor}10)`
-              }"
-            >
-              {{ event.source_app }}
-            </span>
-            <span class="text-xs text-[var(--theme-text-secondary)] px-2 py-0.5 rounded border bg-[var(--theme-bg-tertiary)]/50" :class="borderColorClass">
-              {{ sessionIdShort }}
-            </span>
-            <span class="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium bg-gradient-to-r from-[var(--theme-primary)]/10 to-[var(--theme-primary)]/20 text-[var(--theme-primary)] border border-[var(--theme-primary)]/20">
-              <component :is="eventIcon" class="mr-1 h-3.5 w-3.5" />
-              {{ event.hook_event_type }}
-            </span>
+          <div class="flex items-center space-x-3 w-full">
+            <div class="flex items-center gap-2">
+              <span 
+                class="text-sm font-semibold text-[var(--theme-text-primary)] px-2 py-0.5 rounded-md border bg-[var(--theme-bg-tertiary)]/60"
+                :style="appBorderStyle"
+              >
+                {{ event.source_app }}
+              </span>
+              <span class="text-[10px] text-[var(--theme-text-tertiary)] px-1.5 py-0.5 rounded border bg-[var(--theme-bg-tertiary)]/40" :class="borderColorClass">{{ sessionIdShort }}</span>
+              <span class="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-medium bg-[var(--theme-bg-tertiary)]/40 text-[var(--theme-text-secondary)] border border-[var(--theme-border-primary)]/30">
+                <component :is="eventIcon" class="mr-1 h-3.5 w-3.5" />
+              </span>
+            </div>
           </div>
           <span class="sr-only">
             {{ formatTime(event.timestamp) }}
           </span>
         </div>
         
-        <div class="flex items-center justify-between mb-1.5 mobile:hidden" v-if="!isGroup">
-          <div v-if="toolInfo" class="text-base text-[var(--theme-text-secondary)] font-semibold">
+        <div class="flex items-center justify-between mb-2 mobile:hidden" v-if="!isGroup">
+          <div v-if="toolInfo" class="text-base text-[var(--theme-text-secondary)] font-semibold space-x-2 flex items-center">
+            <component :is="eventIcon" class="h-5 w-5 text-[var(--theme-primary)]" />
             <span class="font-medium">{{ toolInfo.tool }}</span>
             <span v-if="toolInfo.detail" class="ml-2 text-[var(--theme-text-tertiary)]" :class="{ 'italic': event.hook_event_type === 'UserPromptSubmit' }">{{ toolInfo.detail }}</span>
           </div>
           
-          <div v-if="event.summary" class="max-w-[50%] px-2.5 py-1 bg-gradient-to-r from-[var(--theme-primary)]/5 to-[var(--theme-primary)]/10 border border-[var(--theme-primary)]/20 rounded-lg backdrop-blur-sm">
+          <div v-if="event.summary" class="max-w-[50%] md:max-w-[60%] lg:max-w-[70%] xl:max-w-[75%] 2xl:max-w-[80%] px-3 py-1.5 bg-gradient-to-r from-[var(--theme-primary)]/5 to-[var(--theme-primary)]/10 border border-[var(--theme-primary)]/20 rounded-lg backdrop-blur-sm overflow-hidden text-ellipsis">
             <span class="text-xs text-[var(--theme-text-primary)] font-medium flex items-center gap-1">
               <FileText class="h-3 w-3 text-[var(--theme-primary)]" />
               {{ event.summary }}
@@ -88,9 +84,9 @@
           </div>
         </div>
         <div v-else class="mb-1.5 mobile:hidden">
-          <div class="text-xs text-[var(--theme-text-secondary)] font-medium mb-1 flex items-center gap-1">
-            <component :is="actionIcon" class="h-3 w-3 text-[var(--theme-primary)]" />
-            {{ event.hook_event_type }} · {{ groupMeta.tool || 'Read' }} • {{ groupMeta.count }}
+          <div class="text-xs text-[var(--theme-text-secondary)] font-medium mb-2 flex items-center gap-2">
+            <component :is="eventIcon" class="h-3 w-3 text-[var(--theme-primary)]" />
+            {{ event.hook_event_type }} · {{ groupMeta.tool || actionLabel }} • {{ groupMeta.count }}
           </div>
           <div class="flex flex-wrap gap-1">
             <span v-for="(chip, i) in readFilesUnique.slice(0,8)" :key="chip+i" class="px-2 py-0.5 rounded-md border border-[var(--theme-border-primary)]/30 bg-gradient-to-r from-[var(--theme-bg-tertiary)]/50 to-[var(--theme-bg-quaternary)]/50 text-[var(--theme-text-secondary)] text-xs hover:scale-105 transition-transform duration-150">
@@ -118,21 +114,21 @@
         </div>
         
         <Transition name="expand">
-          <div v-if="isExpanded" class="mt-2 pt-2 border-t-2 border-[var(--theme-primary)] bg-gradient-to-r from-[var(--theme-bg-primary)] to-[var(--theme-bg-secondary)] rounded-b-lg p-3 space-y-3">
+          <div v-if="isExpanded" class="mt-2 pt-2 border-t-2 border-[var(--theme-primary)] bg-gradient-to-r from-[var(--theme-bg-primary)] to-[var(--theme-bg-secondary)] rounded-b-lg p-3 space-y-3 w-full max-w-full overflow-hidden origin-top">
             <div>
-              <div class="flex items-center justify-between mb-2 pr-10" v-if="isGroup && !isExpanded">
+              <div class="flex items-center justify-between mb-2 pr-10 w-full max-w-full overflow-hidden" v-if="isGroup && !isExpanded">
               <h4 class="text-sm mobile:text-xs font-medium text-[var(--theme-text-primary)] flex items-center gap-1.5">
-                <component :is="actionIcon" class="h-4 w-4" />
+                <component :is="eventIcon" class="h-4 w-4" />
                 {{ props.event.hook_event_type }}<span> · {{ groupMeta.tool || actionLabel }}</span> • {{ groupMeta.count }}
               </h4>
             </div>
-            <div class="flex items-center justify-between mb-2 pr-10" v-else>
+            <div class="flex items-center justify-between mb-2 pr-10 w-full max-w-full overflow-hidden" v-else>
               <h4 class="text-base mobile:text-sm font-bold text-[var(--theme-primary)] drop-shadow-sm flex items-center">
                 <PackageIcon class="mr-1.5 h-4 w-4" />
                 Payload
               </h4>
             </div>
-            <pre v-if="!isGroup" class="relative group/payload text-sm mobile:text-xs text-[var(--theme-text-primary)] bg-[var(--theme-bg-tertiary)] p-3 mobile:p-2 rounded-lg overflow-x-auto max-h-64 overflow-y-auto font-mono border border-[var(--theme-primary)]/30 shadow-md hover:shadow-lg transition-shadow duration-200">
+            <pre v-if="!isGroup" class="relative group/payload text-sm mobile:text-xs text-[var(--theme-text-primary)] bg-[var(--theme-bg-tertiary)] p-3 mobile:p-2 rounded-lg overflow-x-auto max-h-64 overflow-y-auto font-mono border border-[var(--theme-primary)]/30 shadow-md hover:shadow-lg transition-shadow duration-200 w-full max-w-full">
 {{ formattedPayload }}
               <button
                 @click.stop="copyPayload"
@@ -151,7 +147,7 @@
                 </span>
                 <span v-if="readFiles.length>6" class="text-xs text-[var(--theme-text-tertiary)]">+{{ readFiles.length-6 }} more</span>
               </div>
-              <div class="space-y-2">
+              <div class="space-y-2 w-full max-w-full">
                 <pre v-for="(child, idx) in groupMeta.children" :key="idx" class="relative group/child text-xs text-[var(--theme-text-primary)] bg-[var(--theme-bg-primary)] p-2 rounded border border-[var(--theme-border-primary)]/40 overflow-x-auto">
 {{ JSON.stringify(child.payload, null, 2) }}
                   <button
@@ -204,22 +200,41 @@
   filter: brightness(1.2);
 }
 
-.expand-enter-active { 
-  transition: all 300ms cubic-bezier(0.4, 0, 0.2, 1); 
+.expand-enter-active,
+.expand-leave-active {
+  transition: opacity 220ms cubic-bezier(0.2, 0.7, 0.2, 1),
+              transform 220ms cubic-bezier(0.2, 0.7, 0.2, 1),
+              max-height 260ms cubic-bezier(0.2, 0.7, 0.2, 1),
+              padding 200ms ease;
+  will-change: max-height, transform, opacity;
 }
 
-.expand-leave-active { 
-  transition: all 200ms cubic-bezier(0.4, 0, 1, 1); 
+.expand-enter-from {
+  opacity: 0;
+  transform: translateY(-6px) scale(0.98);
+  max-height: 0;
+  padding-top: 0;
+  padding-bottom: 0;
 }
 
-.expand-enter-from { 
-  opacity: 0; 
-  transform: translateY(-10px) scale(0.95); 
+.expand-enter-to {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+  max-height: 1000px;
 }
 
-.expand-leave-to { 
-  opacity: 0; 
-  transform: translateY(-5px) scale(0.95); 
+.expand-leave-from {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+  max-height: 1000px;
+}
+
+.expand-leave-to {
+  opacity: 0;
+  transform: translateY(-4px) scale(0.98);
+  max-height: 0;
+  padding-top: 0;
+  padding-bottom: 0;
 }
 
 /* Smooth layout when rows change height */

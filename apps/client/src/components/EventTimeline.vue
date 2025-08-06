@@ -1,17 +1,24 @@
 <template>
-  <div class="flex-1 mobile:h-[50vh] flex flex-col overflow-hidden">
+  <div class="flex-1 mobile:h-[50vh] flex flex-col overflow-hidden bg-[var(--theme-bg-secondary)]">
     <!-- Fixed Header -->
-    <div class="px-3 py-2.5 mobile:py-2 bg-gradient-to-r from-[var(--theme-bg-primary)]/95 to-[var(--theme-bg-secondary)]/95 backdrop-blur-lg relative z-10 border-b border-[var(--theme-border-primary)]/20">
-      <div class="flex items-center justify-between">
-        <h2 class="text-sm mobile:text-xs font-medium text-[var(--theme-text-secondary)] flex items-center gap-2">
+    <div class="px-3 py-2.5 mobile:py-2 bg-[var(--theme-bg-primary)]/80 backdrop-blur-lg relative z-10 border-b border-[var(--theme-border-primary)]/5">
+      <div class="flex items-center justify-between gap-3">
+        <div class="flex items-center gap-2 min-w-0">
           <Activity class="w-4 h-4 text-[var(--theme-primary)]" />
-          Event Stream
-        </h2>
-        <div class="flex items-center gap-2">
-          <span class="text-xs text-[var(--theme-text-tertiary)]">
-            {{ filteredEvents.length }} {{ filteredEvents.length === 1 ? 'event' : 'events' }}
-          </span>
+          <h2 class="text-sm mobile:text-xs font-medium text-[var(--theme-text-secondary)] truncate">Event Stream</h2>
+          <span class="text-[10px] text-[var(--theme-text-tertiary)] ml-2">{{ filteredEvents.length }} {{ filteredEvents.length === 1 ? 'event' : 'events' }}</span>
           <span class="w-2 h-2 rounded-full bg-gradient-to-br from-green-400 to-green-600 animate-pulse"></span>
+        </div>
+        <div class="flex items-center gap-2">
+          <select v-model="localFilters.sessionId" @change="emitFilters" class="px-2 py-1 text-[10px] border border-[var(--theme-border-primary)]/40 rounded-md bg-[var(--theme-bg-primary)] text-[var(--theme-text-secondary)]">
+            <option value="">All Sessions</option>
+            <option v-for="session in filterOptions.session_ids" :key="session" :value="session">{{ session.slice(0, 8) }}...</option>
+          </select>
+          <select v-model="localFilters.eventType" @change="emitFilters" class="px-2 py-1 text-[10px] border border-[var(--theme-border-primary)]/40 rounded-md bg-[var(--theme-bg-primary)] text-[var(--theme-text-secondary)]">
+            <option value="">All Types</option>
+            <option v-for="type in filterOptions.hook_event_types" :key="type" :value="type">{{ type }}</option>
+          </select>
+          <button v-if="hasActiveFilters" @click="clearLocalFilters" class="px-2 py-1 text-[10px] rounded-md border border-[var(--theme-border-primary)]/40 text-[var(--theme-text-secondary)] hover:bg-[var(--theme-bg-tertiary)]">Clear</button>
         </div>
       </div>
     </div>
@@ -19,12 +26,12 @@
     <!-- Scrollable Event List -->
     <div 
       ref="scrollContainer"
-      class="flex-1 overflow-y-auto px-4 py-3 mobile:px-2 mobile:py-2 relative bg-gradient-to-b from-transparent via-[var(--theme-bg-secondary)]/50 to-transparent"
+      class="flex-1 overflow-y-auto overflow-x-hidden px-4 py-3 mobile:px-2 mobile:py-2 relative min-w-0"
       @scroll="handleScroll"
     >
-      <div class="relative">
-        <div class="absolute left-32 top-0 bottom-0 w-px bg-gradient-to-b from-[var(--theme-border-primary)]/10 via-[var(--theme-border-primary)]/30 to-[var(--theme-border-primary)]/10"></div>
-        <TransitionGroup name="event" tag="div" class="space-y-3 mobile:space-y-2">
+      <div class="relative overflow-x-hidden min-w-0">
+        <div class="absolute left-32 top-0 bottom-0 w-px bg-gradient-to-b from-[var(--theme-border-primary)]/0 via-[var(--theme-border-primary)]/10 to-[var(--theme-border-primary)]/0"></div>
+        <TransitionGroup name="event" tag="div" class="space-y-3 mobile:space-y-2 min-w-0">
           <EventRow
             v-for="event in filteredEvents"
             :key="`${event.id}-${event.timestamp}`"
@@ -52,9 +59,9 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch, nextTick } from 'vue';
+import { ref, computed, watch, nextTick, onMounted } from 'vue';
 import { Activity } from 'lucide-vue-next';
-import type { HookEvent } from '../types';
+import type { HookEvent, FilterOptions } from '../types';
 import EventRow from './EventRow.vue';
 import { useEventColors } from '../composables/useEventColors';
 
@@ -70,12 +77,29 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   'update:stickToBottom': [value: boolean];
+  'update:filters': [filters: typeof props.filters];
 }>();
 
 const scrollContainer = ref<HTMLElement>();
 const { getGradientForSession, getColorForSession, getGradientForApp, getColorForApp, getHexColorForApp } = useEventColors();
 
 const projectOf = (e: HookEvent) => (e as any).project || (e as any).payload?.project || e.source_app;
+
+const filterOptions = ref<FilterOptions>({ source_apps: [], session_ids: [], hook_event_types: [] });
+const localFilters = ref({ ...props.filters });
+
+const hasActiveFilters = computed(() => localFilters.value.sessionId || localFilters.value.eventType);
+const emitFilters = () => emit('update:filters', { ...localFilters.value });
+const clearLocalFilters = () => { localFilters.value = { sessionId: '', eventType: '' }; emitFilters(); };
+
+const fetchFilterOptions = async () => {
+  try {
+    const res = await fetch('http://localhost:4000/events/filter-options');
+    if (res.ok) filterOptions.value = await res.json();
+  } catch {}
+};
+
+onMounted(() => { fetchFilterOptions(); setInterval(fetchFilterOptions, 10000); });
 
 type AnyEvent = HookEvent & { meta?: any };
 
@@ -115,7 +139,6 @@ const groupedEvents = computed<AnyEvent[]>(() => {
   const out: AnyEvent[] = [];
   let open: { [key: string]: { start: number; last: number; key: string; base: HookEvent; chips: string[]; children: HookEvent[]; tool?: string } } = {};
   const push = (g: typeof open[string]) => {
-    // Aggregate chips from all children at finalize time
     const aggChips: string[] = [];
     for (const child of g.children) {
       const chip = summarizeChip(child);
@@ -178,27 +201,16 @@ const scrollToBottom = () => {
 
 const handleScroll = () => {
   if (!scrollContainer.value) return;
-  
   const { scrollTop, scrollHeight, clientHeight } = scrollContainer.value;
   const isAtBottom = scrollHeight - scrollTop - clientHeight < 50;
-  
-  if (isAtBottom !== props.stickToBottom) {
-    emit('update:stickToBottom', isAtBottom);
-  }
+  if (isAtBottom !== props.stickToBottom) emit('update:stickToBottom', isAtBottom);
 };
 
 watch(() => props.events.length, async () => {
-  if (props.stickToBottom) {
-    await nextTick();
-    scrollToBottom();
-  }
+  if (props.stickToBottom) { await nextTick(); scrollToBottom(); }
 });
 
-watch(() => props.stickToBottom, (shouldStick) => {
-  if (shouldStick) {
-    scrollToBottom();
-  }
-});
+watch(() => props.stickToBottom, (shouldStick) => { if (shouldStick) { scrollToBottom(); } });
 </script>
 
 <style scoped>
