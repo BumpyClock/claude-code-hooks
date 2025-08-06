@@ -1,39 +1,35 @@
-const eventTypeToEmoji: Record<string, string> = {
-  'PreToolUse': '🔧',
-  'PostToolUse': '✅',
-  'Notification': '🔔',
-  'Stop': '🛑',
-  'SubagentStop': '👥',
-  'PreCompact': '📦',
-  'UserPromptSubmit': '💬',
+// Event type labels without emojis
+const eventTypeToLabel: Record<string, string> = {
+  'PreToolUse': 'Tool',
+  'PostToolUse': 'Done',
+  'Notification': 'Alert',
+  'Stop': 'Stop',
+  'SubagentStop': 'Agent',
+  'PreCompact': 'Compact',
+  'UserPromptSubmit': 'Prompt',
   // Default
-  'default': '❓'
+  'default': 'Event'
 };
 
 export function useEventEmojis() {
   const getEmojiForEventType = (eventType: string): string => {
-    return eventTypeToEmoji[eventType] || eventTypeToEmoji.default;
+    // Return empty string instead of emoji for chart usage
+    return '';
   };
   
   const formatEventTypeLabel = (eventTypes: Record<string, number>): string => {
-    const entries = Object.entries(eventTypes)
-      .sort((a, b) => b[1] - a[1]); // Sort by count descending
-    
-    if (entries.length === 0) return '';
-    
-    // Show up to 3 most frequent event types
-    const topEntries = entries.slice(0, 3);
-    
-    return topEntries
-      .map(([type, count]) => {
-        const emoji = getEmojiForEventType(type);
-        return count > 1 ? `${emoji}×${count}` : emoji;
-      })
-      .join('');
+    // For charts, we don't need visual indicators anymore
+    // The chart will use colors to differentiate
+    return '';
+  };
+  
+  const getLabelForEventType = (eventType: string): string => {
+    return eventTypeToLabel[eventType] || eventTypeToLabel.default;
   };
   
   return {
     getEmojiForEventType,
-    formatEventTypeLabel
+    formatEventTypeLabel,
+    getLabelForEventType
   };
 }

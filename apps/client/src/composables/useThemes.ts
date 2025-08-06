@@ -604,19 +604,56 @@ export function useThemes() {
     }
   };
 
+  // Auto theme switching
+  const autoThemeEnabled = ref(false);
+  
+  const enableAutoTheme = () => {
+    autoThemeEnabled.value = true;
+    localStorage.setItem('autoTheme', 'true');
+    applySystemTheme();
+  };
+  
+  const disableAutoTheme = () => {
+    autoThemeEnabled.value = false;
+    localStorage.removeItem('autoTheme');
+    // Keep the current theme when disabling auto
+    const currentTheme = state.value.currentTheme;
+    localStorage.setItem('theme', currentTheme);
+  };
+  
+  const applySystemTheme = () => {
+    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    setTheme(prefersDark ? 'dark' : 'light');
+  };
+
   // Initialization
   const initializeTheme = () => {
     loadCustomThemes();
     
-    // Load saved theme
-    const savedTheme = localStorage.getItem('theme');
-    
-    if (savedTheme) {
-      setTheme(savedTheme);
+    // Check if auto theme is enabled
+    const autoTheme = localStorage.getItem('autoTheme');
+    if (autoTheme === 'true') {
+      autoThemeEnabled.value = true;
+      applySystemTheme();
+      
+      // Listen for system theme changes
+      const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+      mediaQuery.addEventListener('change', (e) => {
+        if (autoThemeEnabled.value) {
+          setTheme(e.matches ? 'dark' : 'light');
+        }
+      });
     } else {
-      // Detect system preference
-      const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-      setTheme(prefersDark ? 'dark' : 'light');
+      // Load saved theme
+      const savedTheme = localStorage.getItem('theme');
+      
+      if (savedTheme) {
+        setTheme(savedTheme);
+      } else {
+        // Default to system preference
+        const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        setTheme(prefersDark ? 'dark' : 'light');
+      }
     }
   };
 
@@ -682,6 +719,7 @@ export function useThemes() {
     // State
     state: readonly(state),
     managerState,
+    autoThemeEnabled: readonly(autoThemeEnabled),
     
     // Computed
     currentThemeData,
@@ -690,6 +728,11 @@ export function useThemes() {
     // Core functions
     setTheme,
     validateTheme,
+    
+    // Auto theme
+    enableAutoTheme,
+    disableAutoTheme,
+    applySystemTheme,
     
     // Custom theme management
     createCustomTheme,

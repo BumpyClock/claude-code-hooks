@@ -245,4 +245,7 @@ CVS/
 claude-output.json
 .claude/commands/feature.md
 
+# Crush local state
+.crush/
+
 specs/

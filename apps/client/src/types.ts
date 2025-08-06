@@ -20,7 +20,7 @@ export interface WebSocketMessage {
   data: HookEvent | HookEvent[];
 }
 
-export type TimeRange = '1m' | '3m' | '5m';
+export type TimeRange = '15s' | '30s' | '1m' | '3m' | '5m';
 
 export interface ChartDataPoint {
   timestamp: number;

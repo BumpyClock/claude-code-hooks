@@ -1,25 +1,25 @@
 <template>
-  <div class="bg-gradient-to-r from-[var(--theme-bg-primary)] to-[var(--theme-bg-secondary)] px-3 py-4 mobile:py-3 shadow-lg">
+  <div class="bg-gradient-to-r from-[var(--theme-bg-primary)]/95 to-[var(--theme-bg-secondary)]/95 backdrop-blur-sm px-3 py-2 mobile:py-2 border-b border-[var(--theme-border-primary)]/20">
     <div class="flex items-center justify-between mb-3 mobile:flex-col mobile:space-y-2 mobile:items-start">
-      <h3 class="text-base mobile:text-sm font-bold text-[var(--theme-primary)] drop-shadow-sm flex items-center">
-        <span class="mr-1.5 text-xl mobile:text-base">📊</span>
-        Live Activity Pulse
+      <h3 class="text-xs mobile:text-xs font-medium text-[var(--theme-text-secondary)] flex items-center gap-1.5">
+        <span class="w-1.5 h-1.5 rounded-full bg-gradient-to-br from-green-400 to-green-600 animate-pulse"></span>
+        Live Activity
       </h3>
-      <div class="flex gap-1.5 mobile:w-full mobile:justify-center" role="tablist" aria-label="Time range selector">
+      <div class="flex gap-1 mobile:w-full mobile:justify-center" role="tablist" aria-label="Time range selector">
         <button
           v-for="(range, index) in timeRanges"
           :key="range"
           @click="setTimeRange(range)"
           @keydown="handleTimeRangeKeyDown($event, index)"
           :class="[
-            'px-3 py-1.5 mobile:px-4 mobile:py-2 text-sm mobile:text-base font-bold rounded-lg transition-all duration-200 min-w-[30px] min-h-[30px] flex items-center justify-center shadow-md hover:shadow-lg transform hover:scale-105 border',
+            'px-2 py-0.5 text-xs rounded-md transition-all duration-150 min-w-[28px] min-h-[24px] flex items-center justify-center border shadow-sm',
             timeRange === range
-              ? 'bg-gradient-to-r from-[var(--theme-primary)] to-[var(--theme-primary-light)] text-white border-[var(--theme-primary-dark)] drop-shadow-md'
-              : 'bg-[var(--theme-bg-tertiary)] text-[var(--theme-text-primary)] border-[var(--theme-border-primary)] hover:bg-[var(--theme-bg-quaternary)] hover:border-[var(--theme-primary)]'
+              ? 'bg-gradient-to-r from-[var(--theme-primary)] to-[var(--theme-primary-dark)] text-white border-[var(--theme-primary-dark)] shadow-md scale-105'
+              : 'bg-[var(--theme-bg-tertiary)]/80 text-[var(--theme-text-primary)] border-[var(--theme-border-primary)]/30 hover:bg-[var(--theme-bg-quaternary)] hover:scale-105 hover:shadow-md'
           ]"
           role="tab"
           :aria-selected="timeRange === range"
-          :aria-label="`Show ${range === '1m' ? '1 minute' : range === '3m' ? '3 minutes' : '5 minutes'} of activity`"
+  :aria-label="`Show ${range}`"
           :tabindex="timeRange === range ? 0 : -1"
         >
           {{ range }}
@@ -36,21 +36,42 @@
         role="img"
         :aria-label="chartAriaLabel"
       ></canvas>
+      <!-- Icon overlay for bars -->
+      <div 
+        v-for="(indicator, index) in iconIndicators" 
+        :key="`icon-${index}`"
+        class="absolute flex items-center justify-center pointer-events-none"
+        :style="{ 
+          left: indicator.x + 'px', 
+          top: indicator.y + 'px',
+          width: '24px',
+          height: '24px',
+          transform: 'translate(-50%, -50%)'
+        }"
+      >
+        <div class="relative flex items-center justify-center w-6 h-6 bg-black/80 dark:bg-white/90 rounded-md backdrop-blur-sm shadow-lg">
+          <component 
+            :is="indicator.icon" 
+            class="w-4 h-4 text-white dark:text-black"
+          />
+        </div>
+      </div>
       <div
         v-if="tooltip.visible"
-        class="absolute bg-gradient-to-r from-[var(--theme-primary)] to-[var(--theme-primary-dark)] text-white px-2 py-1.5 mobile:px-3 mobile:py-2 rounded-lg text-xs mobile:text-sm pointer-events-none z-10 shadow-lg border border-[var(--theme-primary-light)] font-bold drop-shadow-md"
+        class="absolute bg-gradient-to-br from-[var(--theme-bg-primary)]/95 to-[var(--theme-bg-secondary)]/95 backdrop-blur-md text-[var(--theme-text-primary)] px-2.5 py-1.5 mobile:px-3 mobile:py-2 rounded-lg text-xs mobile:text-sm pointer-events-none z-10 shadow-lg border border-[var(--theme-border-primary)]/30 font-medium animate-scaleIn"
         :style="{ left: tooltip.x + 'px', top: tooltip.y + 'px' }"
       >
-        {{ tooltip.text }}
+        <span class="font-bold text-[var(--theme-primary)]">{{ tooltip.text.split(' ')[0] }}</span>
+        <span class="text-[var(--theme-text-secondary)]">{{ tooltip.text.slice(tooltip.text.indexOf(' ')) }}</span>
       </div>
       <div
         v-if="!hasData"
         class="absolute inset-0 flex items-center justify-center"
       >
-        <p class="text-[var(--theme-text-tertiary)] mobile:text-sm text-base font-semibold">
-          <span class="mr-1.5 text-base">⏳</span>
-          Waiting for events...
-        </p>
+        <div class="flex flex-col items-center gap-2 animate-fadeIn">
+          <div class="w-8 h-8 rounded-full border-2 border-[var(--theme-border-primary)]/30 border-t-[var(--theme-primary)] animate-spin"></div>
+          <p class="text-[var(--theme-text-tertiary)] text-xs font-medium">Waiting for events...</p>
+        </div>
       </div>
     </div>
   </div>
@@ -58,16 +79,16 @@
 
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted, watch, computed } from 'vue';
-import type { HookEvent, TimeRange, ChartConfig } from '../types';
+import type { HookEvent, ChartConfig } from '../types';
 import { useChartData } from '../composables/useChartData';
 import { createChartRenderer, type ChartDimensions } from '../utils/chartRenderer';
 import { useEventEmojis } from '../composables/useEventEmojis';
 import { useEventColors } from '../composables/useEventColors';
+import { Wrench, CheckCircle, AlertCircle, XCircle, Users, Archive, MessageSquare, Activity } from 'lucide-vue-next';
 
 const props = defineProps<{
   events: HookEvent[];
   filters: {
-    sourceApp: string;
     sessionId: string;
     eventType: string;
   };
@@ -79,9 +100,9 @@ const props = defineProps<{
 
 const canvas = ref<HTMLCanvasElement>();
 const chartContainer = ref<HTMLDivElement>();
-const chartHeight = 96; // Reduced by 33% from 144
+const chartHeight = 80;
 
-const timeRanges: TimeRange[] = ['1m', '3m', '5m'];
+const timeRanges = ['15s', '30s', '1m', '3m', '5m'] as const;
 
 const {
   timeRange,
@@ -115,6 +136,13 @@ const tooltip = ref({
   text: ''
 });
 
+const iconIndicators = ref<Array<{
+  x: number;
+  y: number;
+  icon: any;
+  visible: boolean;
+}>>([]);
+
 const getThemeColor = (property: string): string => {
   const style = getComputedStyle(document.documentElement);
   const color = style.getPropertyValue(`--theme-${property}`).trim();
@@ -122,10 +150,12 @@ const getThemeColor = (property: string): string => {
 };
 
 const getActiveConfig = (): ChartConfig => {
+  const range = timeRange.value as string;
+  const seconds = range === '15s' ? 15 : range === '30s' ? 30 : range === '1m' ? 60 : range === '3m' ? 180 : 300;
   return {
-    maxDataPoints: 60,
-    animationDuration: 300,
-    barWidth: 3,
+    maxDataPoints: seconds,
+    animationDuration: 200,
+    barWidth: 2,
     barGap: 1,
     colors: {
       primary: getThemeColor('primary'),
@@ -150,17 +180,71 @@ const getDimensions = (): ChartDimensions => {
   };
 };
 
+const getIconForEventType = (eventType: string) => {
+  const iconMap: Record<string, any> = {
+    'PreToolUse': Wrench,
+    'PostToolUse': CheckCircle,
+    'Notification': AlertCircle,
+    'Stop': XCircle,
+    'SubagentStop': Users,
+    'PreCompact': Archive,
+    'UserPromptSubmit': MessageSquare,
+    'default': Activity
+  };
+  return iconMap[eventType] || iconMap.default;
+};
+
 const render = () => {
-  if (!renderer || !canvas.value) return;
+  if (!renderer || !canvas.value || !chartContainer.value) return;
 
   const data = getChartData();
   const maxValue = Math.max(...data.map(d => d.count), 1);
+  const dimensions = getDimensions();
+  const chartArea = {
+    x: dimensions.padding.left,
+    y: dimensions.padding.top,
+    width: dimensions.width - dimensions.padding.left - dimensions.padding.right,
+    height: dimensions.height - dimensions.padding.top - dimensions.padding.bottom
+  };
   
   renderer.clear();
-  renderer.drawBackground();
-  renderer.drawAxes();
-  renderer.drawTimeLabels(timeRange.value);
+  // Ambient chart: hide background, axes, and labels
   renderer.drawBars(data, maxValue, 1, formatEventTypeLabel, getHexColorForSession);
+  
+  // Update icon indicators
+  const barCount = data.length;
+  const totalBarWidth = chartArea.width / barCount;
+  const barWidth = 2; // Match the config.barWidth
+  
+  const newIndicators: typeof iconIndicators.value = [];
+  
+  data.forEach((point, index) => {
+    if (point.count > 0 && point.eventTypes) {
+      // Get the dominant event type
+      const dominantType = Object.entries(point.eventTypes)
+        .sort((a, b) => b[1] - a[1])[0]?.[0];
+      
+      if (dominantType) {
+        const x = chartArea.x + (index * totalBarWidth) + (totalBarWidth / 2);
+        const barHeight = (point.count / maxValue) * chartArea.height;
+        const y = chartArea.y + chartArea.height - (barHeight / 2);
+        
+        // Show icon if bar is tall enough (lowered threshold for better visibility)
+        if (barHeight > 8) {
+          // Position icon at the top of the bar for better visibility
+          const iconY = chartArea.y + chartArea.height - barHeight - 12;
+          newIndicators.push({
+            x: x,
+            y: Math.max(iconY, chartArea.y + 5), // Ensure icon stays within chart bounds
+            icon: getIconForEventType(dominantType),
+            visible: true
+          });
+        }
+      }
+    }
+  });
+  
+  iconIndicators.value = newIndicators;
 };
 
 const animateNewEvent = (x: number, y: number) => {
@@ -195,9 +279,7 @@ const handleResize = () => {
 };
 
 const isEventFiltered = (event: HookEvent): boolean => {
-  if (props.filters.sourceApp && event.source_app !== props.filters.sourceApp) {
-    return false;
-  }
+
   if (props.filters.sessionId && event.session_id !== props.filters.sessionId) {
     return false;
   }
