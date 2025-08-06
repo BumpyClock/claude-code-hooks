@@ -1,83 +1,87 @@
 <template>
-  <div class="relative pl-32 max-w-full w-full">
-    <div class="absolute left-0 top-4 w-28 pr-4 text-right">
-      <div class="text-[10px] leading-3 font-mono tracking-tight text-[var(--theme-text-quaternary)] select-none opacity-50 hover:opacity-100 transition-opacity duration-200">
-        {{ formatTime(event.timestamp) }}
-      </div>
-    </div>
-    <div class="absolute left-32 top-0 bottom-0 w-[1px] bg-gradient-to-b from-transparent via-[var(--theme-border-primary)]/30 to-transparent"></div>
+  <div class="relative max-w-full w-full">
     <div 
-      class="absolute left-[calc(8rem-5px)] top-4 h-2.5 w-2.5 rounded-full ring-2 ring-[var(--theme-bg-secondary)] transition-all duration-300 ease-out"
-      :class="{ 'scale-150 shadow-lg': isExpanded }"
-      :style="{ 
-        background: `linear-gradient(135deg, ${appHexColor}, ${appHexColor}dd)`,
-        boxShadow: isExpanded ? `0 0 16px ${appHexColor}50` : `0 0 8px ${appHexColor}20`
-      }"
-    ></div>
-    <div 
-      class="group ml-8 relative p-3 mobile:p-2 rounded-xl border border-[var(--theme-border-primary)]/20 hover:border-[var(--theme-primary)]/30 bg-[var(--theme-bg-primary)]/90 transition-all duration-200 cursor-pointer shadow-sm hover:shadow-md w-[calc(100%-2rem)] max-w-[calc(100%-2rem)] overflow-hidden"
-      :class="{ 
-        'ring-1 ring-[var(--theme-primary)]/15 border-[var(--theme-primary)]/30 shadow-md bg-[var(--theme-bg-primary)]': isExpanded
-      }"
+      class="group relative p-2.5 mobile:p-2 rounded-lg border border-[var(--theme-border-primary)]/15 hover:border-[var(--theme-primary)]/25 bg-[var(--theme-bg-primary)]/90 transition-all duration-200 cursor-pointer shadow-sm hover:shadow-md w-full overflow-hidden min-h-[100px]"
       @click="toggleExpanded"
     >
       <div class="ml-0">
-        <div class="hidden mobile:block mb-2">
+        <div class="hidden mobile:block mb-1.5">
           <div class="flex items-center justify-between mb-1">
-            <span 
-              class="text-xs font-semibold text-[var(--theme-text-primary)] px-1.5 py-0.5 rounded-full border-2 bg-gradient-to-br shadow-sm transition-all duration-200 hover:shadow-md hover:scale-105"
+            <UBadge 
+              variant="soft"
+              size="xs"
+              class="font-semibold shadow-sm transition-all duration-200 hover:shadow-md hover:scale-105"
               :style="{ 
                 ...appBgStyle, 
                 ...appBorderStyle,
                 backgroundImage: `linear-gradient(135deg, ${appHexColor}20, ${appHexColor}10)`
               }"
+              data-testid="mobile-app-badge"
             >
               {{ event.source_app }}
-            </span>
-            <span class="sr-only">
-              {{ formatTime(event.timestamp) }}
-            </span>
+            </UBadge>
+            <span class="text-[10px] text-[var(--theme-text-tertiary)]">{{ formatTime(event.timestamp) }}</span>
           </div>
           <div class="flex items-center space-x-2">
-            <span class="text-xs text-[var(--theme-text-secondary)] px-1.5 py-0.5 rounded-full border bg-[var(--theme-bg-tertiary)]/50" :class="borderColorClass">
+            <UBadge 
+              variant="outline"
+              size="xs"
+              class="text-[var(--theme-text-secondary)] bg-[var(--theme-bg-tertiary)]/50"
+              :class="borderColorClass"
+              :style="{ borderColor: appHexColor }"
+              data-testid="mobile-session-badge"
+            >
               {{ sessionIdShort }}
-            </span>
-            <span class="inline-flex items-center px-1.5 py-0.5 rounded-full text-xs font-medium bg-gradient-to-r from-[var(--theme-primary)]/10 to-[var(--theme-primary)]/20 text-[var(--theme-primary)] border border-[var(--theme-primary)]/20">
+            </UBadge>
+            <UBadge 
+              variant="solid"
+              color="primary"
+              size="xs"
+              class="font-medium bg-gradient-to-r from-[var(--theme-primary)]/10 to-[var(--theme-primary)]/20 text-[var(--theme-primary)] border border-[var(--theme-primary)]/20"
+              data-testid="event-type-badge"
+            >
               <component :is="eventIcon" class="mr-1 h-3.5 w-3.5" />
               {{ event.hook_event_type }}
-            </span>
+            </UBadge>
           </div>
         </div>
 
-        <div class="flex items-center justify-between mb-1.5 mobile:hidden">
+        <div class="flex items-center justify-between mb-1 mobile:hidden min-h-[28px]">
           <div class="flex items-center space-x-3 w-full">
-            <div class="flex items-center gap-2">
-              <span 
-                class="text-sm font-semibold text-[var(--theme-text-primary)] px-2 py-0.5 rounded-md border bg-[var(--theme-bg-tertiary)]/60"
+            <div class="flex items-center gap-2.5 flex-1 min-w-0">
+              <UBadge 
+                variant="soft"
+                size="sm"
+                class="text-[13px] font-semibold text-[var(--theme-text-primary)] bg-[var(--theme-bg-tertiary)]/50"
                 :style="appBorderStyle"
+                data-testid="desktop-app-badge"
               >
                 {{ event.source_app }}
-              </span>
-              <span class="text-[10px] text-[var(--theme-text-tertiary)] px-1.5 py-0.5 rounded border bg-[var(--theme-bg-tertiary)]/40" :class="borderColorClass">{{ sessionIdShort }}</span>
-              <span class="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-medium bg-[var(--theme-bg-tertiary)]/40 text-[var(--theme-text-secondary)] border border-[var(--theme-border-primary)]/30">
-                <component :is="eventIcon" class="mr-1 h-3.5 w-3.5" />
-              </span>
+              </UBadge>
+              <UBadge 
+                variant="outline"
+                size="xs"
+                class="text-[10px] text-[var(--theme-text-tertiary)] bg-[var(--theme-bg-tertiary)]/40"
+                :class="borderColorClass"
+                :style="{ borderColor: appHexColor }"
+                data-testid="desktop-session-badge"
+              >
+                {{ sessionIdShort }}
+              </UBadge>
             </div>
           </div>
-          <span class="sr-only">
-            {{ formatTime(event.timestamp) }}
-          </span>
+          <div class="ml-3 text-[10px] text-[var(--theme-text-tertiary)] whitespace-nowrap">{{ formatTime(event.timestamp) }}</div>
         </div>
         
-        <div class="flex items-center justify-between mb-2 mobile:hidden" v-if="!isGroup">
-          <div v-if="toolInfo" class="text-base text-[var(--theme-text-secondary)] font-semibold space-x-2 flex items-center">
+        <div class="flex items-center justify-between mb-1.5 mobile:hidden" v-if="!isGroup">
+          <div v-if="toolInfo" class="text-[13px] text-[var(--theme-text-secondary)] font-medium space-x-2 flex items-center">
             <component :is="eventIcon" class="h-5 w-5 text-[var(--theme-primary)]" />
             <span class="font-medium">{{ toolInfo.tool }}</span>
             <span v-if="toolInfo.detail" class="ml-2 text-[var(--theme-text-tertiary)]" :class="{ 'italic': event.hook_event_type === 'UserPromptSubmit' }">{{ toolInfo.detail }}</span>
           </div>
           
-          <div v-if="event.summary" class="max-w-[50%] md:max-w-[60%] lg:max-w-[70%] xl:max-w-[75%] 2xl:max-w-[80%] px-3 py-1.5 bg-gradient-to-r from-[var(--theme-primary)]/5 to-[var(--theme-primary)]/10 border border-[var(--theme-primary)]/20 rounded-lg backdrop-blur-sm overflow-hidden text-ellipsis">
-            <span class="text-xs text-[var(--theme-text-primary)] font-medium flex items-center gap-1">
+          <div v-if="event.summary" class="max-w-[55%] md:max-w-[60%] lg:max-w-[68%] xl:max-w-[72%] 2xl:max-w-[78%] px-2.5 py-1.5 bg-[var(--theme-bg-tertiary)]/40 border border-[var(--theme-border-primary)]/25 rounded-md backdrop-blur-sm overflow-hidden text-ellipsis">
+            <span class="text-[12px] text-[var(--theme-text-primary)] font-medium flex items-center gap-1.5">
               <FileText class="h-3 w-3 text-[var(--theme-primary)]" />
               {{ event.summary }}
             </span>
@@ -89,10 +93,17 @@
             {{ event.hook_event_type }} · {{ groupMeta.tool || actionLabel }} • {{ groupMeta.count }}
           </div>
           <div class="flex flex-wrap gap-1">
-            <span v-for="(chip, i) in readFilesUnique.slice(0,8)" :key="chip+i" class="px-2 py-0.5 rounded-md border border-[var(--theme-border-primary)]/30 bg-gradient-to-r from-[var(--theme-bg-tertiary)]/50 to-[var(--theme-bg-quaternary)]/50 text-[var(--theme-text-secondary)] text-xs hover:scale-105 transition-transform duration-150">
+            <UBadge 
+              v-for="(chip, i) in readFilesUnique.slice(0,8)" 
+              :key="chip+i"
+              variant="outline"
+              size="xs"
+              class="border-[var(--theme-border-primary)]/30 bg-gradient-to-r from-[var(--theme-bg-tertiary)]/50 to-[var(--theme-bg-quaternary)]/50 text-[var(--theme-text-secondary)] hover:scale-105 transition-transform duration-150"
+              :data-testid="`file-chip-${i}`"
+            >
               {{ chip }}
-            </span>
-            <span v-if="readFilesUnique.length>8" class="text-xs text-[var(--theme-text-tertiary)] flex items-center gap-0.5">
+            </UBadge>
+            <span v-if="readFilesUnique.length>8" class="text-xs text-[var(--theme-text-tertiary)] flex items-center gap-0.5" data-testid="more-files-indicator">
               <MoreHorizontal class="h-3 w-3" />
               {{ readFilesUnique.length-8 }}
             </span>
@@ -113,83 +124,20 @@
           </div>
         </div>
         
-        <Transition name="expand">
-          <div v-if="isExpanded" class="mt-2 pt-2 border-t-2 border-[var(--theme-primary)] bg-gradient-to-r from-[var(--theme-bg-primary)] to-[var(--theme-bg-secondary)] rounded-b-lg p-3 space-y-3 w-full max-w-full overflow-hidden origin-top">
-            <div>
-              <div class="flex items-center justify-between mb-2 pr-10 w-full max-w-full overflow-hidden" v-if="isGroup && !isExpanded">
-              <h4 class="text-sm mobile:text-xs font-medium text-[var(--theme-text-primary)] flex items-center gap-1.5">
-                <component :is="eventIcon" class="h-4 w-4" />
-                {{ props.event.hook_event_type }}<span> · {{ groupMeta.tool || actionLabel }}</span> • {{ groupMeta.count }}
-              </h4>
-            </div>
-            <div class="flex items-center justify-between mb-2 pr-10 w-full max-w-full overflow-hidden" v-else>
-              <h4 class="text-base mobile:text-sm font-bold text-[var(--theme-primary)] drop-shadow-sm flex items-center">
-                <PackageIcon class="mr-1.5 h-4 w-4" />
-                Payload
-              </h4>
-            </div>
-            <pre v-if="!isGroup" class="relative group/payload text-sm mobile:text-xs text-[var(--theme-text-primary)] bg-[var(--theme-bg-tertiary)] p-3 mobile:p-2 rounded-lg overflow-x-auto max-h-64 overflow-y-auto font-mono border border-[var(--theme-primary)]/30 shadow-md hover:shadow-lg transition-shadow duration-200 w-full max-w-full">
-{{ formattedPayload }}
-              <button
-                @click.stop="copyPayload"
-                class="absolute top-1.5 right-1.5 h-6 w-6 p-0 grid place-items-center text-[11px] rounded bg-[var(--theme-bg-primary)]/60 hover:bg-[var(--theme-bg-primary)] text-[var(--theme-text-tertiary)] hover:text-[var(--theme-text-primary)] border border-[var(--theme-border-primary)]/40 hover:border-[var(--theme-border-primary)] transition-colors duration-150 shadow-sm opacity-0 group-hover/payload:opacity-100"
-                :title="copyButtonTitle"
-              >
-                <Copy v-if="copyButtonIcon === 'copy'" class="h-3.5 w-3.5" />
-                <Check v-else-if="copyButtonIcon === 'check'" class="h-3.5 w-3.5" />
-                <X v-else class="h-3.5 w-3.5" />
-              </button>
-            </pre>
-            <div v-else class="text-sm mobile:text-xs text-[var(--theme-text-primary)] bg-[var(--theme-bg-tertiary)] p-3 mobile:p-2 rounded-lg border border-[var(--theme-primary)]/30">
-              <div class="flex flex-wrap gap-x-3 gap-y-1 mb-2">
-                <span v-for="(f,i) in readFiles.slice(0,6)" :key="f+i" class="px-2 py-0.5 rounded border border-[var(--theme-border-primary)]/50 bg-[var(--theme-bg-primary)] text-[var(--theme-text-secondary)] text-xs">
-                  {{ f }}
-                </span>
-                <span v-if="readFiles.length>6" class="text-xs text-[var(--theme-text-tertiary)]">+{{ readFiles.length-6 }} more</span>
-              </div>
-              <div class="space-y-2 w-full max-w-full">
-                <pre v-for="(child, idx) in groupMeta.children" :key="idx" class="relative group/child text-xs text-[var(--theme-text-primary)] bg-[var(--theme-bg-primary)] p-2 rounded border border-[var(--theme-border-primary)]/40 overflow-x-auto">
-{{ JSON.stringify(child.payload, null, 2) }}
-                  <button
-                    @click.stop="copyChild(idx)"
-                    class="absolute top-1.5 right-1.5 h-6 w-6 p-0 grid place-items-center text-[11px] rounded bg-[var(--theme-bg-primary)]/60 hover:bg-[var(--theme-bg-primary)] text-[var(--theme-text-tertiary)] hover:text-[var(--theme-text-primary)] border border-[var(--theme-border-primary)]/40 hover:border-[var(--theme-border-primary)] transition-colors duration-150 shadow-sm opacity-0 group-hover/child:opacity-100"
-                    title="Copy payload"
-                  >
-                    <Copy v-if="childCopyState(idx) === 'copy'" class="h-3.5 w-3.5" />
-                    <Check v-else-if="childCopyState(idx) === 'check'" class="h-3.5 w-3.5" />
-                    <X v-else class="h-3.5 w-3.5" />
-                  </button>
-                </pre>
-              </div>
-            </div>
-          </div>
-          
-          <div v-if="event.chat && event.chat.length > 0" class="flex justify-end">
-            <button
-              @click.stop="!isMobile && (showChatModal = true)"
-              :class="[
-                'px-4 py-2 mobile:px-3 mobile:py-1.5 font-bold rounded-lg transition-all duration-200 flex items-center space-x-1.5 shadow-md hover:shadow-lg',
-                isMobile 
-                  ? 'bg-[var(--theme-bg-quaternary)] cursor-not-allowed opacity-50 text-[var(--theme-text-quaternary)] border border-[var(--theme-border-tertiary)]' 
-                  : 'bg-gradient-to-r from-[var(--theme-primary)] to-[var(--theme-primary-light)] hover:from-[var(--theme-primary-dark)] hover:to-[var(--theme-primary)] text-white border border-[var(--theme-primary-dark)] transform hover:scale-105'
-              ]"
-              :disabled="isMobile"
-            >
-              <MessageSquare class="h-4 w-4" />
-              <span class="text-sm mobile:text-xs font-bold drop-shadow-sm">
-                {{ isMobile ? 'Not available in mobile' : `View Chat Transcript (${event.chat.length} messages)` }}
-              </span>
-            </button>
-          </div>
-          </div>
-        </Transition>
       </div>
     </div>
     <ChatTranscriptModal 
-      v-if="event.chat && event.chat.length > 0"
+      v-if="frozenChatData.length > 0"
+      :key="`chat-modal-${event.session_id}-${event.timestamp}`"
       :is-open="showChatModal"
-      :chat="event.chat"
-      @close="showChatModal = false"
+      :chat="frozenChatData"
+      @close="showChatModal = false; frozenChatData = [];"
+    />
+    <EventDetailsModal 
+      v-if="showDetailsModal && !(event.hook_event_type === 'Stop' && event.chat && event.chat.length > 0)" 
+      :is-open="showDetailsModal" 
+      :event="event" 
+      @close="showDetailsModal = false" 
     />
   </div>
 </template>
@@ -254,10 +202,11 @@
 
 <script setup lang="ts">
 import { ref, computed } from 'vue';
-import { Copy, Check, X, MessageSquare, Package as PackageIcon, Wrench, Bell, Square, Box, FileText, Pencil, ListTodo, Files, LogOut, MoreHorizontal } from 'lucide-vue-next';
+import { Check, MessageSquare, Wrench, Bell, Square, Box, FileText, MoreHorizontal } from 'lucide-vue-next';
 import type { HookEvent } from '../types';
-import { useMediaQuery } from '../composables/useMediaQuery';
 import ChatTranscriptModal from './ChatTranscriptModal.vue';
+import EventDetailsModal from './EventDetailsModal.vue';
+// UBadge component will be globally available via plugin
 
 const props = defineProps<{
   event: HookEvent;
@@ -268,17 +217,21 @@ const props = defineProps<{
   appHexColor: string;
 }>();
 
-const isExpanded = ref(false);
 const showChatModal = ref(false);
-const copyButtonText = ref('Copy');
-const copyButtonIcon = computed(() => (copyButtonText.value.includes('Copied') ? 'check' : copyButtonText.value.includes('Failed') ? 'x' : 'copy'));
-const copyButtonTitle = computed(() => copyButtonText.value);
+const showDetailsModal = ref(false);
 
-// Media query for responsive design
-const { isMobile } = useMediaQuery();
+// Store a frozen copy of chat data to prevent re-renders
+const frozenChatData = ref<any[]>([]);
 
 const toggleExpanded = () => {
-  isExpanded.value = !isExpanded.value;
+  // For Stop events with chat data, open chat modal directly
+  if (props.event.hook_event_type === 'Stop' && props.event.chat && props.event.chat.length > 0) {
+    // Create a deep frozen copy of the chat data to prevent re-renders
+    frozenChatData.value = JSON.parse(JSON.stringify(props.event.chat));
+    showChatModal.value = true;
+  } else {
+    showDetailsModal.value = true;
+  }
 };
 
 const sessionIdShort = computed(() => {
@@ -312,23 +265,7 @@ const actionLabel = computed(() => {
   return 'Action';
 });
 
-const actionIcon = computed(() => {
-  const label = actionLabel.value;
-  switch (label) {
-    case 'Read':
-      return FileText;
-    case 'Write':
-      return Pencil;
-    case 'ToDoWrite':
-      return ListTodo;
-    case 'MultiWrite':
-      return Files;
-    case 'ExitPlanMode':
-      return LogOut;
-    default:
-      return PackageIcon;
-  }
-});
+// actionIcon computed property removed as it's no longer used
 
 const borderColorClass = computed(() => {
   // Convert bg-color-500 to border-color-500
@@ -354,9 +291,7 @@ const groupMeta = computed(() => (props.event as any).meta || {});
 const readFiles = computed<string[]>(() => groupMeta.value.chips || []);
 const readFilesUnique = computed<string[]>(() => Array.from(new Set(readFiles.value)));
 
-const formattedPayload = computed(() => {
-  return JSON.stringify(props.event.payload, null, 2);
-});
+// formattedPayload removed as copy functionality was removed with UBadge migration
 
 const toolInfo = computed(() => {
   const payload = props.event.payload;
@@ -395,41 +330,5 @@ const formatTime = (timestamp?: number) => {
   return date.toLocaleTimeString();
 };
 
-const copyPayload = async () => {
-  try {
-    await navigator.clipboard.writeText(formattedPayload.value);
-    copyButtonText.value = 'Copied!';
-    setTimeout(() => {
-      copyButtonText.value = 'Copy';
-    }, 2000);
-  } catch (err) {
-    console.error('Failed to copy:', err);
-    copyButtonText.value = 'Failed';
-    setTimeout(() => {
-      copyButtonText.value = 'Copy';
-    }, 2000);
-  }
-};
-
-const childCopyStates = ref<Map<number, 'copy' | 'check' | 'x'>>(new Map());
-const childCopyState = (idx: number) => childCopyStates.value.get(idx) || 'copy';
-const copyChild = async (idx: number) => {
-  try {
-    const child = groupMeta.value.children[idx];
-    await navigator.clipboard.writeText(JSON.stringify(child.payload, null, 2));
-    childCopyStates.value.set(idx, 'check');
-    childCopyStates.value = new Map(childCopyStates.value);
-    setTimeout(() => {
-      childCopyStates.value.delete(idx);
-      childCopyStates.value = new Map(childCopyStates.value);
-    }, 1500);
-  } catch (e) {
-    childCopyStates.value.set(idx, 'x');
-    childCopyStates.value = new Map(childCopyStates.value);
-    setTimeout(() => {
-      childCopyStates.value.delete(idx);
-      childCopyStates.value = new Map(childCopyStates.value);
-    }, 1500);
-  }
-};
+// Copy functions removed as they're no longer used after UBadge migration
 </script>
