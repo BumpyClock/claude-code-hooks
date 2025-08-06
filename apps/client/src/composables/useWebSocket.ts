@@ -28,10 +28,27 @@ export function useWebSocket(url: string) {
           
           if (message.type === 'initial') {
             const initialEvents = Array.isArray(message.data) ? message.data : [];
+            console.log('[useWebSocket] Initial events received:', {
+              count: initialEvents.length,
+              eventsWithSummary: initialEvents.filter((e: any) => e.summary).length,
+              sampleEvents: initialEvents.slice(0, 3).map((e: any) => ({
+                id: e.id,
+                hook_event_type: e.hook_event_type,
+                summary: e.summary,
+                has_summary: !!e.summary
+              }))
+            });
             // Only keep the most recent events up to maxEvents
             events.value = initialEvents.slice(-maxEvents);
           } else if (message.type === 'event') {
             const newEvent = message.data as HookEvent;
+            console.log('[useWebSocket] New event received:', {
+              id: newEvent.id,
+              hook_event_type: newEvent.hook_event_type,
+              summary: newEvent.summary,
+              has_summary: !!newEvent.summary,
+              source_app: newEvent.source_app
+            });
             events.value.push(newEvent);
             
             // Limit events array to maxEvents, removing the oldest when exceeded

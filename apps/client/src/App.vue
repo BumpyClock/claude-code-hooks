@@ -9,13 +9,14 @@
           <div class="w-7 h-7 rounded-md bg-[var(--theme-bg-tertiary)] flex items-center justify-center border border-[var(--theme-border-primary)]/40">
             <svg class="w-4 h-4 text-[var(--theme-text-secondary)]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 13h18M5 17h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
           </div>
-          <h1 class="text-sm font-semibold text-[var(--theme-text-secondary)] tracking-wide">Multi‑Agent Observability</h1>
+          <h1 class="text-sm font-semibold text-[var(--theme-text-secondary)] tracking-wide">Claude Monitor</h1>
         </div>
-        <div class="flex items-center gap-2">
-          <!-- Project Filter Dropdown -->
-          <div class="hidden md:block">
+        <div class="flex items-center gap-3">
+          <!-- Filters moved to header -->
+          <div class="flex items-center gap-2">
+            <!-- Project Filter -->
             <Select v-model="localSelectedProject" @update:model-value="updateSelectedProject">
-              <SelectTrigger class="h-8 text-xs w-[160px] bg-[var(--theme-bg-primary)] border-[var(--theme-border-primary)]/40 text-[var(--theme-text-secondary)] hover:bg-[var(--theme-bg-tertiary)]">
+              <SelectTrigger class="h-8 text-xs w-[140px] bg-[var(--theme-bg-primary)] border-[var(--theme-border-primary)]/40 text-[var(--theme-text-secondary)] hover:bg-[var(--theme-bg-tertiary)]">
                 <SelectValue placeholder="All Projects" />
               </SelectTrigger>
               <SelectContent class="bg-[var(--theme-bg-primary)] border-[var(--theme-border-primary)]/40">
@@ -36,6 +37,44 @@
                     <span>{{ project.name }}</span>
                     <Badge variant="secondary" class="ml-2">{{ project.count }}</Badge>
                   </div>
+                </SelectItem>
+              </SelectContent>
+            </Select>
+            
+            <!-- Session Filter -->
+            <Select v-model="filters.sessionId" @update:model-value="updateSessionId">
+              <SelectTrigger class="h-8 text-xs w-[120px] bg-[var(--theme-bg-primary)] border-[var(--theme-border-primary)]/40 text-[var(--theme-text-secondary)] hover:bg-[var(--theme-bg-tertiary)]">
+                <SelectValue placeholder="All Sessions" />
+              </SelectTrigger>
+              <SelectContent class="bg-[var(--theme-bg-primary)] border-[var(--theme-border-primary)]/40">
+                <SelectItem value="__ALL_SESSIONS__" class="text-[var(--theme-text-secondary)] hover:bg-[var(--theme-bg-tertiary)]">All Sessions</SelectItem>
+                <SelectSeparator />
+                <SelectItem 
+                  v-for="session in uniqueSessions" 
+                  :key="session" 
+                  :value="session"
+                  class="text-[var(--theme-text-secondary)] hover:bg-[var(--theme-bg-tertiary)]"
+                >
+                  {{ session.slice(0, 8) }}...
+                </SelectItem>
+              </SelectContent>
+            </Select>
+            
+            <!-- Event Type Filter -->
+            <Select v-model="filters.eventType" @update:model-value="updateEventType">
+              <SelectTrigger class="h-8 text-xs w-[120px] bg-[var(--theme-bg-primary)] border-[var(--theme-border-primary)]/40 text-[var(--theme-text-secondary)] hover:bg-[var(--theme-bg-tertiary)]">
+                <SelectValue placeholder="All Types" />
+              </SelectTrigger>
+              <SelectContent class="bg-[var(--theme-bg-primary)] border-[var(--theme-border-primary)]/40">
+                <SelectItem value="__ALL_TYPES__" class="text-[var(--theme-text-secondary)] hover:bg-[var(--theme-bg-tertiary)]">All Types</SelectItem>
+                <SelectSeparator />
+                <SelectItem 
+                  v-for="type in uniqueEventTypes" 
+                  :key="type" 
+                  :value="type"
+                  class="text-[var(--theme-text-secondary)] hover:bg-[var(--theme-bg-tertiary)]"
+                >
+                  {{ type }}
                 </SelectItem>
               </SelectContent>
             </Select>
@@ -98,7 +137,7 @@
             </div>
           </Card>
           <Card class="p-0 overflow-hidden transition-all duration-200 hover:shadow-lg">
-            <EventHeaderPulse :events="events" :filters="filters as any" :timeline-scroll="timelineScrollPosition" />
+            <EventHeaderPulse :events="fullyFilteredEvents" :filters="filters as any" :timeline-scroll="timelineScrollPosition" />
           </Card>
         </div>
       </div>
@@ -144,7 +183,7 @@ import ProjectFilterCards from './components/ProjectFilterCards.vue';
 const { events, error } = useWebSocket('ws://localhost:4000/stream');
 const themes = useThemes();
 
-const filters = ref({ sessionId: '', eventType: '' });
+const filters = ref({ sessionId: '__ALL_SESSIONS__', eventType: '__ALL_TYPES__' });
 const stickToBottom = ref(true);
 const showThemeManager = ref(false);
 const showThemeMenu = ref(false);
@@ -167,10 +206,26 @@ const projectOf = (e: any) => e.project || e.payload?.project || e.source_app;
 const baseFilteredEvents = computed(() => {
   if (!filters.value) return events.value;
   return events.value.filter(event => {
-    if (filters.value.sessionId && event.session_id !== filters.value.sessionId) return false;
-    if (filters.value.eventType && event.hook_event_type !== filters.value.eventType) return false;
+    if (filters.value.sessionId && filters.value.sessionId !== '__ALL_SESSIONS__' && event.session_id !== filters.value.sessionId) return false;
+    if (filters.value.eventType && filters.value.eventType !== '__ALL_TYPES__' && event.hook_event_type !== filters.value.eventType) return false;
     return true;
   });
+});
+
+// Complete filtered events including project filtering (for EventHeaderPulse)
+const fullyFilteredEvents = computed(() => {
+  let filtered = baseFilteredEvents.value;
+  if (selectedProject.value) {
+    filtered = filtered.filter(event => projectOf(event) === selectedProject.value);
+  }
+  console.log('[App.vue] Filter state:', {
+    rawEventsCount: events.value.length,
+    baseFilteredCount: baseFilteredEvents.value.length,
+    fullyFilteredCount: filtered.length,
+    filters: filters.value,
+    selectedProject: selectedProject.value
+  });
+  return filtered;
 });
 
 const totalFilteredCount = computed(() => baseFilteredEvents.value.length);
@@ -185,10 +240,26 @@ const projectsWithCounts = computed(() => {
   return Array.from(projectCounts.entries()).map(([name, count]) => ({ name, count }));
 });
 
+const uniqueSessions = computed(() => {
+  return [...new Set(events.value.map(e => e.session_id))];
+});
+
+const uniqueEventTypes = computed(() => {
+  return [...new Set(events.value.map(e => e.hook_event_type))];
+});
+
 const updateSelectedProject = (value: any) => {
   const stringValue = String(value);
   localSelectedProject.value = stringValue || '__ALL__';
   selectedProject.value = (stringValue === '__ALL__' || !stringValue) ? '' : stringValue;
+};
+
+const updateSessionId = (value: string) => {
+  filters.value.sessionId = value || '__ALL_SESSIONS__';
+};
+
+const updateEventType = (value: string) => {
+  filters.value.eventType = value || '__ALL_TYPES__';
 };
 
 const timelineScrollPosition = ref(0);

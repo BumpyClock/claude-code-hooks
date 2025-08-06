@@ -81,15 +81,8 @@ const props = defineProps<{
 const timeRanges: TimeRange[] = ['15s', '30s', '1m', '3m', '5m'];
 const timeRange = ref<TimeRange>('1m');
 
-// Convert events to chart data format
-const filteredEvents = computed(() => {
-  if (!props.filters) return props.events;
-  return props.events.filter(event => {
-    if (props.filters!.sessionId && event.session_id !== props.filters!.sessionId) return false;
-    if (props.filters!.eventType && event.hook_event_type !== props.filters!.eventType) return false;
-    return true;
-  });
-});
+// Events are already filtered by the parent component (EventHeaderPulse gets fullyFilteredEvents from App.vue)
+const filteredEvents = computed(() => props.events);
 
 const chartData = computed(() => {
   const now = Date.now();

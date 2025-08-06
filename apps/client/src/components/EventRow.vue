@@ -1,129 +1,82 @@
 <template>
-  <div class="relative max-w-full w-full">
+  <div class="relative max-w-full w-full px-1.5 md:px-2">
     <Card 
-      class="group relative p-3 mobile:p-2.5 cursor-pointer transition-all duration-300 hover:shadow-lg hover:scale-[1.01] border-border/10 hover:border-primary/20 bg-card/95 backdrop-blur-sm w-full overflow-hidden min-h-[100px]"
+      class="group relative cursor-pointer transition-all duration-200 hover:shadow-lg border border-border/30 hover:border-primary/30 bg-card w-full overflow-visible hover-lift focus-within:ring-2 focus-within:ring-primary/40"
       @click="toggleExpanded"
     >
-      <div class="ml-0">
-        <div class="hidden mobile:block mb-1.5">
-          <div class="flex items-center justify-between mb-1">
-            <Badge 
-              variant="soft"
-              size="xs"
-              class="font-semibold shadow-sm transition-all duration-200 hover:shadow-md hover:scale-105"
-              :style="{ 
-                ...appBgStyle, 
-                ...appBorderStyle,
-                backgroundImage: `linear-gradient(135deg, ${appHexColor}20, ${appHexColor}10)`
-              }"
-              data-testid="mobile-app-badge"
-            >
+      <div class="absolute left-0 top-0 bottom-0 w-1.5" :style="{ backgroundColor: appHexColor }"></div>
+      
+      <div class="pl-4 pr-4 py-2.5 ml-2">
+        <div class="flex items-center justify-between mb-1.5">
+          <div class="flex items-center gap-2.5 min-w-0">
+            <span class="text-[13px] font-semibold tracking-tight text-[var(--theme-text-primary)] truncate max-w-[40%]" title="Project">
               {{ event.source_app }}
-            </Badge>
-            <span class="text-[10px] text-[var(--theme-text-tertiary)]">{{ formatTime(event.timestamp) }}</span>
-          </div>
-          <div class="flex items-center space-x-2">
-            <Badge 
-              variant="outline"
-              size="xs"
-              class="text-[var(--theme-text-secondary)] bg-[var(--theme-bg-tertiary)]/50"
-              :class="borderColorClass"
-              :style="{ borderColor: appHexColor }"
-              data-testid="mobile-session-badge"
-            >
+            </span>
+            <Badge variant="outline" class="font-mono text-[10px] px-1.5 py-0.5 rounded-sm" title="Session">
               {{ sessionIdShort }}
             </Badge>
-            <Badge 
-              variant="solid"
-              color="primary"
-              size="xs"
-              class="font-medium bg-gradient-to-r from-[var(--theme-primary)]/10 to-[var(--theme-primary)]/20 text-[var(--theme-primary)] border border-[var(--theme-primary)]/20"
-              data-testid="event-type-badge"
-            >
-              <component :is="eventIcon" class="mr-1 h-3.5 w-3.5" />
-              {{ event.hook_event_type }}
+            <Badge v-if="agentName" variant="soft" class="text-[11px] px-2 py-0.5 truncate max-w-[30%]" title="Agent">
+              {{ agentName }}
             </Badge>
           </div>
+          <span class="text-[11px] text-[var(--theme-text-tertiary)] whitespace-nowrap">
+            {{ formatTime(event.timestamp) }}
+          </span>
         </div>
 
-        <div class="flex items-center justify-between mb-1 mobile:hidden min-h-[28px]">
-          <div class="flex items-center space-x-3 w-full">
-            <div class="flex items-center gap-2.5 flex-1 min-w-0">
-              <Badge 
-                variant="soft"
-                size="sm"
-                class="text-[13px] font-semibold text-[var(--theme-text-primary)] bg-[var(--theme-bg-tertiary)]/50"
-                :style="appBorderStyle"
-                data-testid="desktop-app-badge"
-              >
-                {{ event.source_app }}
+        <div class="flex items-start gap-3">
+          <div class="flex-1 min-w-0">
+            <div class="flex items-center gap-2 mb-1">
+              <Badge variant="soft" class="gap-1 px-2 py-0.5 text-[11px] leading-4">
+                <component :is="eventIcon" class="h-3.5 w-3.5 text-primary" />
+                <span class="font-medium text-[var(--theme-text-primary)]">{{ event.hook_event_type }}</span>
               </Badge>
-              <Badge 
-                variant="outline"
-                size="xs"
-                class="text-[10px] text-[var(--theme-text-tertiary)] bg-[var(--theme-bg-tertiary)]/40"
-                :class="borderColorClass"
-                :style="{ borderColor: appHexColor }"
-                data-testid="desktop-session-badge"
-              >
-                {{ sessionIdShort }}
-              </Badge>
+              <span v-if="toolInfo?.tool && toolInfo.tool !== 'Prompt'" class="text-[12px] text-[var(--theme-text-secondary)] truncate max-w-[50%]">
+                {{ toolInfo.tool }}
+              </span>
+            </div>
+
+            <div v-if="!isGroup">
+              <div class="flex items-center gap-2 text-[13px] leading-5 mb-0.5">
+                <span class="font-medium text-[var(--theme-text-primary)]" v-if="toolInfo?.detail">Details</span>
+                <span v-if="toolInfo?.detail" class="text-[12px] text-[var(--theme-text-secondary)] truncate max-w-[60%]" 
+                      :class="{ 'italic': event.hook_event_type === 'UserPromptSubmit' }">
+                  {{ toolInfo.detail }}
+                </span>
+              </div>
+            </div>
+            
+            <div v-if="event.summary" class="text-[12.5px] text-[var(--theme-text-secondary)] leading-5 line-clamp-2">
+              {{ event.summary }}
+            </div>
+            
+            <div v-if="isGroup" class="space-y-1.5">
+              <div class="text-[13px] font-medium text-[var(--theme-text-primary)]">
+                {{ groupMeta.tool || actionLabel }} • {{ groupMeta.count }} operations
+              </div>
+              <div class="flex flex-wrap gap-1.5">
+                <Badge 
+                  v-for="(chip, i) in readFilesUnique.slice(0,4)" 
+                  :key="chip+i"
+                  variant="outline"
+                  class="text-[10px] px-1.5 py-0.5 rounded-sm"
+                >
+                  {{ chip }}
+                </Badge>
+                <span v-if="readFilesUnique.length > 4" class="text-[11px] text-[var(--theme-text-tertiary)]">
+                  +{{ readFilesUnique.length - 4 }}
+                </span>
+              </div>
             </div>
           </div>
-          <div class="ml-3 text-[10px] text-[var(--theme-text-tertiary)] whitespace-nowrap">{{ formatTime(event.timestamp) }}</div>
-        </div>
-        
-        <div class="flex items-center justify-between mb-1.5 mobile:hidden" v-if="!isGroup">
-          <div v-if="toolInfo" class="text-[13px] text-[var(--theme-text-secondary)] font-medium space-x-2 flex items-center">
-            <component :is="eventIcon" class="h-5 w-5 text-[var(--theme-primary)]" />
-            <span class="font-medium">{{ toolInfo.tool }}</span>
-            <span v-if="toolInfo.detail" class="ml-2 text-[var(--theme-text-tertiary)]" :class="{ 'italic': event.hook_event_type === 'UserPromptSubmit' }">{{ toolInfo.detail }}</span>
-          </div>
-          
-          <div v-if="event.summary" class="max-w-[55%] md:max-w-[60%] lg:max-w-[68%] xl:max-w-[72%] 2xl:max-w-[78%] px-2.5 py-1.5 bg-[var(--theme-bg-tertiary)]/40 border border-[var(--theme-border-primary)]/25 rounded-md backdrop-blur-sm overflow-hidden text-ellipsis">
-            <span class="text-[12px] text-[var(--theme-text-primary)] font-medium flex items-center gap-1.5">
-              <FileText class="h-3 w-3 text-[var(--theme-primary)]" />
-              {{ event.summary }}
-            </span>
-          </div>
-        </div>
-        <div v-else class="mb-1.5 mobile:hidden">
-          <div class="text-xs text-[var(--theme-text-secondary)] font-medium mb-2 flex items-center gap-2">
-            <component :is="eventIcon" class="h-3 w-3 text-[var(--theme-primary)]" />
-            {{ event.hook_event_type }} · {{ groupMeta.tool || actionLabel }} • {{ groupMeta.count }}
-          </div>
-          <div class="flex flex-wrap gap-1">
-            <Badge 
-              v-for="(chip, i) in readFilesUnique.slice(0,8)" 
-              :key="chip+i"
-              variant="outline"
-              size="xs"
-              class="border-[var(--theme-border-primary)]/30 bg-gradient-to-r from-[var(--theme-bg-tertiary)]/50 to-[var(--theme-bg-quaternary)]/50 text-[var(--theme-text-secondary)] hover:scale-105 transition-transform duration-150"
-              :data-testid="`file-chip-${i}`"
-            >
-              {{ chip }}
-            </Badge>
-            <span v-if="readFilesUnique.length>8" class="text-xs text-[var(--theme-text-tertiary)] flex items-center gap-0.5" data-testid="more-files-indicator">
-              <MoreHorizontal class="h-3 w-3" />
-              {{ readFilesUnique.length-8 }}
-            </span>
-          </div>
-        </div>
 
-        <div class="space-y-2 hidden mobile:block mb-2">
-          <div v-if="toolInfo" class="text-sm text-[var(--theme-text-secondary)] font-semibold w-full">
-            <span class="font-medium">{{ toolInfo.tool }}</span>
-            <span v-if="toolInfo.detail" class="ml-2 text-[var(--theme-text-tertiary)]" :class="{ 'italic': event.hook_event_type === 'UserPromptSubmit' }">{{ toolInfo.detail }}</span>
-          </div>
-          
-          <div v-if="event.summary" class="w-full px-2 py-1 bg-gradient-to-r from-[var(--theme-primary)]/5 to-[var(--theme-primary)]/10 border border-[var(--theme-primary)]/20 rounded-lg shadow-sm backdrop-blur-sm">
-            <span class="text-xs text-[var(--theme-text-primary)] font-semibold flex items-center gap-1">
-              <FileText class="h-3 w-3 text-[var(--theme-primary)]" />
-              {{ event.summary }}
-            </span>
-          </div>
+          <button 
+            class="opacity-0 group-hover:opacity-100 transition-opacity text-[var(--theme-text-tertiary)] hover:text-[var(--theme-text-secondary)] p-1 rounded-md hover:bg-[var(--theme-hover-bg)]"
+            aria-label="More"
+          >
+            <MoreHorizontal class="w-4 h-4" />
+          </button>
         </div>
-        
       </div>
     </Card>
     <ChatTranscriptModal 
@@ -185,24 +138,29 @@
   padding-bottom: 0;
 }
 
-/* Smooth layout when rows change height */
 :global(.event-move) { 
   transition: transform 300ms cubic-bezier(0.4, 0, 0.2, 1); 
 }
 
-/* Hover lift effect */
 .hover-lift {
   transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
 .hover-lift:hover {
-  transform: translateY(-2px) scale(1.01);
+  transform: translateY(-2px) scale(1.005);
+}
+
+.line-clamp-2 {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
 </style>
 
 <script setup lang="ts">
 import { ref, computed } from 'vue';
-import { Check, MessageSquare, Wrench, Bell, Square, Box, FileText, MoreHorizontal } from 'lucide-vue-next';
+import { Check, MessageSquare, Wrench, Bell, Square, Box, MoreHorizontal } from 'lucide-vue-next';
 import type { HookEvent } from '../types';
 import ChatTranscriptModal from './ChatTranscriptModal.vue';
 import EventDetailsModal from './EventDetailsModal.vue';
@@ -216,6 +174,8 @@ const props = defineProps<{
   appColorClass: string;
   appHexColor: string;
 }>();
+
+
 
 const showChatModal = ref(false);
 const showDetailsModal = ref(false);
@@ -258,8 +218,8 @@ const eventIcon = computed(() => {
 const actionLabel = computed(() => {
   const t = (groupMeta.value.tool || '').toLowerCase();
   if (t.includes('read')) return 'Read';
-  if (t.includes('write') && t.includes('multi')) return 'MultiWrite';
-  if (t.includes('todowrite') || t.includes('todo')) return 'ToDoWrite';
+  if (t.includes('multi') && t.includes('write')) return 'MultiWrite';
+  if (t.includes('todo')) return 'ToDoWrite';
   if (t.includes('write')) return 'Write';
   if (t.includes('exit')) return 'ExitPlanMode';
   return 'Action';
@@ -287,6 +247,7 @@ const appBgStyle = computed(() => {
 });
 
 const isGroup = computed(() => (props.event as any).meta?.group === 'aggregate');
+const agentName = computed(() => (props.event as any).agent_name || (props.event as any).meta?.agent || '');
 const groupMeta = computed(() => (props.event as any).meta || {});
 const readFiles = computed<string[]>(() => groupMeta.value.chips || []);
 const readFilesUnique = computed<string[]>(() => Array.from(new Set(readFiles.value)));
@@ -295,39 +256,25 @@ const readFilesUnique = computed<string[]>(() => Array.from(new Set(readFiles.va
 
 const toolInfo = computed(() => {
   const payload = props.event.payload;
-  
-  // Handle UserPromptSubmit events
   if (props.event.hook_event_type === 'UserPromptSubmit' && payload.prompt) {
-    return {
-      tool: 'Prompt:',
-      detail: `"${payload.prompt.slice(0, 100)}${payload.prompt.length > 100 ? '...' : ''}"`
-    };
+    return { tool: 'Prompt', detail: `"${payload.prompt.slice(0, 100)}${payload.prompt.length > 100 ? '...' : ''}"` };
   }
-  
-  // Handle tool-based events
   if (payload.tool_name) {
     const info: { tool: string; detail?: string } = { tool: payload.tool_name };
-    
     if (payload.tool_input) {
-      if (payload.tool_input.command) {
-        info.detail = payload.tool_input.command.slice(0, 50) + (payload.tool_input.command.length > 50 ? '...' : '');
-      } else if (payload.tool_input.file_path) {
-        info.detail = payload.tool_input.file_path.split('/').pop();
-      } else if (payload.tool_input.pattern) {
-        info.detail = payload.tool_input.pattern;
-      }
+      if (payload.tool_input.command) info.detail = payload.tool_input.command.slice(0, 50) + (payload.tool_input.command.length > 50 ? '...' : '');
+      else if (payload.tool_input.file_path) info.detail = payload.tool_input.file_path.split('/').pop();
+      else if (payload.tool_input.pattern) info.detail = payload.tool_input.pattern;
     }
-    
     return info;
   }
-  
   return null;
 });
 
 const formatTime = (timestamp?: number) => {
   if (!timestamp) return '';
   const date = new Date(timestamp);
-  return date.toLocaleTimeString();
+  return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 };
 
 // Copy functions removed as they're no longer used after Badge migration

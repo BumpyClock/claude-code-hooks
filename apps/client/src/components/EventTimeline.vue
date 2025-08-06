@@ -1,69 +1,5 @@
 <template>
   <div class="flex-1 mobile:h-[50vh] flex flex-col overflow-hidden bg-[var(--theme-bg-secondary)]">
-    <!-- Fixed Header with Live Activity -->
-    <div class="px-3 py-2 mobile:py-2 bg-[var(--theme-bg-primary)]/80 backdrop-blur-lg relative z-10 border-b border-[var(--theme-border-primary)]/5">
-      <div class="flex flex-col gap-2">
-        <div class="flex items-center justify-between gap-3">
-          <div class="flex items-center gap-2 min-w-0">
-            <div class="relative">
-              <Activity class="w-4 h-4 text-[var(--theme-primary)]" />
-              <div class="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-gradient-to-br from-green-400 to-green-600 animate-pulse"></div>
-            </div>
-            <h2 class="text-sm mobile:text-xs font-medium text-[var(--theme-text-secondary)] truncate">Event Stream</h2>
-            <Badge variant="secondary" class="text-[10px] px-2 py-0.5 bg-[var(--theme-bg-tertiary)]/50 text-[var(--theme-text-tertiary)]">
-              {{ filteredEvents.length }} {{ filteredEvents.length === 1 ? 'event' : 'events' }}
-            </Badge>
-            <span class="text-xs text-[var(--theme-primary)] font-medium">LIVE</span>
-          </div>
-          <div class="flex items-center gap-2">
-            <Select v-model:modelValue="localFilters.sessionId" @update:modelValue="updateSessionFilter">
-              <SelectTrigger class="h-7 text-[10px] w-[180px] bg-[var(--theme-bg-primary)] border-[var(--theme-border-primary)]/40 text-[var(--theme-text-secondary)] hover:bg-[var(--theme-bg-tertiary)]">
-                <SelectValue placeholder="All Sessions" />
-              </SelectTrigger>
-              <SelectContent class="bg-[var(--theme-bg-primary)] border-[var(--theme-border-primary)]/40">
-                <SelectItem value="__ALL__" class="text-[var(--theme-text-secondary)] hover:bg-[var(--theme-bg-tertiary)]">All Sessions</SelectItem>
-                <SelectSeparator />
-                <SelectItem 
-                  v-for="session in filterOptions.session_ids" 
-                  :key="session" 
-                  :value="String(session)"
-                  class="text-[var(--theme-text-secondary)] hover:bg-[var(--theme-bg-tertiary)]"
-                >
-                  {{ session.slice(0, 8) }}...
-                </SelectItem>
-              </SelectContent>
-            </Select>
-            <Select v-model:modelValue="localFilters.eventType" @update:modelValue="updateEventTypeFilter">
-              <SelectTrigger class="h-7 text-[10px] w-[180px] bg-[var(--theme-bg-primary)] border-[var(--theme-border-primary)]/40 text-[var(--theme-text-secondary)] hover:bg-[var(--theme-bg-tertiary)]">
-                <SelectValue placeholder="All Types" />
-              </SelectTrigger>
-              <SelectContent class="bg-[var(--theme-bg-primary)] border-[var(--theme-border-primary)]/40">
-                <SelectItem value="__ALL__" class="text-[var(--theme-text-secondary)] hover:bg-[var(--theme-bg-tertiary)]">All Types</SelectItem>
-                <SelectSeparator />
-                <SelectItem 
-                  v-for="type in filterOptions.hook_event_types" 
-                  :key="type" 
-                  :value="String(type)"
-                  class="text-[var(--theme-text-secondary)] hover:bg-[var(--theme-bg-tertiary)]"
-                >
-                  {{ type }}
-                </SelectItem>
-              </SelectContent>
-            </Select>
-            <Button 
-              v-if="hasActiveFilters" 
-              @click="clearLocalFilters" 
-              size="sm" 
-              variant="outline" 
-              class="h-7 text-[10px] bg-[var(--theme-bg-primary)] border-[var(--theme-border-primary)]/40 text-[var(--theme-text-secondary)] hover:bg-[var(--theme-bg-tertiary)]"
-            >
-              Clear
-            </Button>
-          </div>
-        </div>
-
-      </div>
-    </div>
     
     <!-- Scrollable Event List -->
     <div 
@@ -140,28 +76,28 @@ const projectOf = (e: HookEvent) => (e as any).project || (e as any).payload?.pr
 
 const filterOptions = ref<FilterOptions>({ source_apps: [], session_ids: [], hook_event_types: [] });
 const localFilters = ref({ 
-  sessionId: props.filters.sessionId || '__ALL__',
-  eventType: props.filters.eventType || '__ALL__'
+  sessionId: props.filters.sessionId || '__ALL_SESSIONS__',
+  eventType: props.filters.eventType || '__ALL_TYPES__'
 });
 
 // Watch for changes in parent filters to keep local state in sync
 watch(() => props.filters, (newFilters) => {
   localFilters.value = { 
-    sessionId: newFilters.sessionId || '__ALL__',
-    eventType: newFilters.eventType || '__ALL__'
+    sessionId: newFilters.sessionId || '__ALL_SESSIONS__',
+    eventType: newFilters.eventType || '__ALL_TYPES__'
   };
 }, { deep: true });
 
 const hasActiveFilters = computed(() => 
-  (localFilters.value.sessionId && localFilters.value.sessionId !== '__ALL__') || 
-  (localFilters.value.eventType && localFilters.value.eventType !== '__ALL__')
+  (localFilters.value.sessionId && localFilters.value.sessionId !== '__ALL_SESSIONS__') || 
+  (localFilters.value.eventType && localFilters.value.eventType !== '__ALL_TYPES__')
 );
 const emitFilters = () => emit('update:filters', { 
-  sessionId: localFilters.value.sessionId === '__ALL__' ? '' : localFilters.value.sessionId,
-  eventType: localFilters.value.eventType === '__ALL__' ? '' : localFilters.value.eventType
+  sessionId: localFilters.value.sessionId === '__ALL_SESSIONS__' ? '__ALL_SESSIONS__' : localFilters.value.sessionId,
+  eventType: localFilters.value.eventType === '__ALL_TYPES__' ? '__ALL_TYPES__' : localFilters.value.eventType
 });
 const clearLocalFilters = () => { 
-  localFilters.value = { sessionId: '__ALL__', eventType: '__ALL__' }; 
+  localFilters.value = { sessionId: '__ALL_SESSIONS__', eventType: '__ALL_TYPES__' }; 
   emitFilters(); 
 };
 
@@ -173,12 +109,12 @@ const fetchFilterOptions = async () => {
 };
 
 const updateSessionFilter = (value: any) => {
-  localFilters.value.sessionId = (value === '__ALL__' || !value) ? '' : String(value);
+  localFilters.value.sessionId = (value === '__ALL__' || !value) ? '__ALL_SESSIONS__' : String(value);
   emitFilters();
 };
 
 const updateEventTypeFilter = (value: any) => {
-  localFilters.value.eventType = (value === '__ALL__' || !value) ? '' : String(value);
+  localFilters.value.eventType = (value === '__ALL__' || !value) ? '__ALL_TYPES__' : String(value);
   emitFilters();
 };
 
@@ -245,6 +181,16 @@ const groupedEvents = computed<AnyEvent[]>(() => {
   };
 
   const events = [...props.events];
+  console.log('[EventTimeline] Processing events for grouping:', {
+    totalEvents: events.length,
+    eventsWithSummary: events.filter(e => e.summary).length,
+    sampleEventsWithSummary: events.filter(e => e.summary).slice(0, 3).map(e => ({
+      id: e.id,
+      summary: e.summary,
+      hook_event_type: e.hook_event_type
+    }))
+  });
+  
   for (const e of events) {
     const ts = e.timestamp || 0;
     const k = groupKey(e);
@@ -264,14 +210,26 @@ const groupedEvents = computed<AnyEvent[]>(() => {
     }
   }
   Object.values(open).forEach(push);
+  
+  console.log('[EventTimeline] Grouped events result:', {
+    totalGroupedEvents: out.length,
+    groupedEventsWithSummary: out.filter(e => e.summary).length,
+    sampleGroupedEventsWithSummary: out.filter(e => e.summary).slice(0, 3).map(e => ({
+      id: e.id,
+      summary: e.summary,
+      hook_event_type: e.hook_event_type,
+      isGroup: !!e.meta?.group
+    }))
+  });
+  
   return out;
 });
 
 const filteredEvents = computed(() => {
   return groupedEvents.value.filter(event => {
     if (props.selectedProject && projectOf(event) !== props.selectedProject) return false;
-    if (props.filters.sessionId && event.session_id !== props.filters.sessionId) return false;
-    if (props.filters.eventType && event.hook_event_type !== props.filters.eventType) return false;
+    if (props.filters.sessionId && props.filters.sessionId !== '__ALL_SESSIONS__' && event.session_id !== props.filters.sessionId) return false;
+    if (props.filters.eventType && props.filters.eventType !== '__ALL_TYPES__' && event.hook_event_type !== props.filters.eventType) return false;
     return true;
   });
 });
@@ -299,6 +257,20 @@ const handleScroll = () => {
 watch(() => props.events.length, async () => {
   if (props.stickToBottom) { await nextTick(); scrollToTop(); }
 });
+
+watch(() => props.events, (newEvents) => {
+  console.log('[EventTimeline] Events prop changed:', {
+    count: newEvents.length,
+    latestEvents: newEvents.slice(0, 3).map(e => ({
+      id: e.id,
+      timestamp: e.timestamp,
+      hook_event_type: e.hook_event_type,
+      session_id: e.session_id?.slice(0, 8),
+      summary: e.summary,
+      source_app: e.source_app
+    }))
+  });
+}, { deep: true });
 
 watch(() => props.stickToBottom, (shouldStick) => { if (shouldStick) { scrollToTop(); } });
 </script>
