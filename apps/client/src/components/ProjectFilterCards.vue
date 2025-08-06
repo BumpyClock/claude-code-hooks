@@ -1,22 +1,25 @@
 <template>
   <div class="px-2 py-2 overflow-x-auto">
     <div class="flex flex-col gap-1">
-      <button
-        class="px-2 py-1.5 rounded-md border text-xs text-[var(--theme-text-secondary)] hover:bg-[var(--theme-bg-tertiary)] text-left"
-        :class="selectedProject === '' ? 'bg-[var(--theme-bg-tertiary)] border-[var(--theme-border-primary)]/60' : 'border-[var(--theme-border-primary)]/40'"
+      <Button size="sm" variant="outline" class="justify-between text-xs"
+        :class="selectedProject === '' ? 'bg-secondary/20' : ''"
         @click="$emit('update:selectedProject', '')"
       >
-        All <span class="ml-1 opacity-70">({{ totalFilteredCount }})</span>
-      </button>
-      <button
+        <span>All</span>
+        <Badge variant="secondary">{{ totalFilteredCount }}</Badge>
+      </Button>
+      <Button
         v-for="p in projectsWithCounts"
         :key="p.name"
-        class="px-2 py-1.5 rounded-md border text-xs text-[var(--theme-text-secondary)] hover:bg-[var(--theme-bg-tertiary)] text-left"
-        :class="selectedProject === p.name ? 'bg-[var(--theme-bg-tertiary)] border-[var(--theme-border-primary)]/60' : 'border-[var(--theme-border-primary)]/40'"
+        size="sm"
+        variant="outline"
+        class="justify-between text-xs"
+        :class="selectedProject === p.name ? 'bg-secondary/20' : ''"
         @click="$emit('update:selectedProject', p.name)"
       >
-        {{ p.name }} <span class="ml-1 opacity-70">({{ p.count }})</span>
-      </button>
+        <span>{{ p.name }}</span>
+        <Badge variant="secondary">{{ p.count }}</Badge>
+      </Button>
     </div>
   </div>
 </template>
@@ -24,6 +27,8 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import type { HookEvent } from '../types'
+import { Button } from '@/components/ui/button'
+import { Badge } from '@/components/ui/badge'
 
 const props = defineProps<{
   events: HookEvent[];

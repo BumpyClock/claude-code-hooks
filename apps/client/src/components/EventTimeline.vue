@@ -1,25 +1,67 @@
 <template>
   <div class="flex-1 mobile:h-[50vh] flex flex-col overflow-hidden bg-[var(--theme-bg-secondary)]">
-    <!-- Fixed Header -->
-    <div class="px-3 py-2.5 mobile:py-2 bg-[var(--theme-bg-primary)]/80 backdrop-blur-lg relative z-10 border-b border-[var(--theme-border-primary)]/5">
-      <div class="flex items-center justify-between gap-3">
-        <div class="flex items-center gap-2 min-w-0">
-          <Activity class="w-4 h-4 text-[var(--theme-primary)]" />
-          <h2 class="text-sm mobile:text-xs font-medium text-[var(--theme-text-secondary)] truncate">Event Stream</h2>
-          <span class="text-[10px] text-[var(--theme-text-tertiary)] ml-2">{{ filteredEvents.length }} {{ filteredEvents.length === 1 ? 'event' : 'events' }}</span>
-          <span class="w-2 h-2 rounded-full bg-gradient-to-br from-green-400 to-green-600 animate-pulse"></span>
+    <!-- Fixed Header with Live Activity -->
+    <div class="px-3 py-2 mobile:py-2 bg-[var(--theme-bg-primary)]/80 backdrop-blur-lg relative z-10 border-b border-[var(--theme-border-primary)]/5">
+      <div class="flex flex-col gap-2">
+        <div class="flex items-center justify-between gap-3">
+          <div class="flex items-center gap-2 min-w-0">
+            <div class="relative">
+              <Activity class="w-4 h-4 text-[var(--theme-primary)]" />
+              <div class="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-gradient-to-br from-green-400 to-green-600 animate-pulse"></div>
+            </div>
+            <h2 class="text-sm mobile:text-xs font-medium text-[var(--theme-text-secondary)] truncate">Event Stream</h2>
+            <Badge variant="secondary" class="text-[10px] px-2 py-0.5 bg-[var(--theme-bg-tertiary)]/50 text-[var(--theme-text-tertiary)]">
+              {{ filteredEvents.length }} {{ filteredEvents.length === 1 ? 'event' : 'events' }}
+            </Badge>
+            <span class="text-xs text-[var(--theme-primary)] font-medium">LIVE</span>
+          </div>
+          <div class="flex items-center gap-2">
+            <Select v-model:modelValue="localFilters.sessionId" @update:modelValue="updateSessionFilter">
+              <SelectTrigger class="h-7 text-[10px] w-[180px] bg-[var(--theme-bg-primary)] border-[var(--theme-border-primary)]/40 text-[var(--theme-text-secondary)] hover:bg-[var(--theme-bg-tertiary)]">
+                <SelectValue placeholder="All Sessions" />
+              </SelectTrigger>
+              <SelectContent class="bg-[var(--theme-bg-primary)] border-[var(--theme-border-primary)]/40">
+                <SelectItem value="__ALL__" class="text-[var(--theme-text-secondary)] hover:bg-[var(--theme-bg-tertiary)]">All Sessions</SelectItem>
+                <SelectSeparator />
+                <SelectItem 
+                  v-for="session in filterOptions.session_ids" 
+                  :key="session" 
+                  :value="String(session)"
+                  class="text-[var(--theme-text-secondary)] hover:bg-[var(--theme-bg-tertiary)]"
+                >
+                  {{ session.slice(0, 8) }}...
+                </SelectItem>
+              </SelectContent>
+            </Select>
+            <Select v-model:modelValue="localFilters.eventType" @update:modelValue="updateEventTypeFilter">
+              <SelectTrigger class="h-7 text-[10px] w-[180px] bg-[var(--theme-bg-primary)] border-[var(--theme-border-primary)]/40 text-[var(--theme-text-secondary)] hover:bg-[var(--theme-bg-tertiary)]">
+                <SelectValue placeholder="All Types" />
+              </SelectTrigger>
+              <SelectContent class="bg-[var(--theme-bg-primary)] border-[var(--theme-border-primary)]/40">
+                <SelectItem value="__ALL__" class="text-[var(--theme-text-secondary)] hover:bg-[var(--theme-bg-tertiary)]">All Types</SelectItem>
+                <SelectSeparator />
+                <SelectItem 
+                  v-for="type in filterOptions.hook_event_types" 
+                  :key="type" 
+                  :value="String(type)"
+                  class="text-[var(--theme-text-secondary)] hover:bg-[var(--theme-bg-tertiary)]"
+                >
+                  {{ type }}
+                </SelectItem>
+              </SelectContent>
+            </Select>
+            <Button 
+              v-if="hasActiveFilters" 
+              @click="clearLocalFilters" 
+              size="sm" 
+              variant="outline" 
+              class="h-7 text-[10px] bg-[var(--theme-bg-primary)] border-[var(--theme-border-primary)]/40 text-[var(--theme-text-secondary)] hover:bg-[var(--theme-bg-tertiary)]"
+            >
+              Clear
+            </Button>
+          </div>
         </div>
-        <div class="flex items-center gap-2">
-          <select v-model="localFilters.sessionId" @change="emitFilters" class="px-2 py-1 text-[10px] border border-[var(--theme-border-primary)]/40 rounded-md bg-[var(--theme-bg-primary)] text-[var(--theme-text-secondary)]">
-            <option value="">All Sessions</option>
-            <option v-for="session in filterOptions.session_ids" :key="session" :value="session">{{ session.slice(0, 8) }}...</option>
-          </select>
-          <select v-model="localFilters.eventType" @change="emitFilters" class="px-2 py-1 text-[10px] border border-[var(--theme-border-primary)]/40 rounded-md bg-[var(--theme-bg-primary)] text-[var(--theme-text-secondary)]">
-            <option value="">All Types</option>
-            <option v-for="type in filterOptions.hook_event_types" :key="type" :value="type">{{ type }}</option>
-          </select>
-          <button v-if="hasActiveFilters" @click="clearLocalFilters" class="px-2 py-1 text-[10px] rounded-md border border-[var(--theme-border-primary)]/40 text-[var(--theme-text-secondary)] hover:bg-[var(--theme-bg-tertiary)]">Clear</button>
-        </div>
+
       </div>
     </div>
     
@@ -33,7 +75,7 @@
         <div class="absolute left-32 top-0 bottom-0 w-px bg-gradient-to-b from-[var(--theme-border-primary)]/0 via-[var(--theme-border-primary)]/10 to-[var(--theme-border-primary)]/0"></div>
         <TransitionGroup name="event" tag="div" class="space-y-3 mobile:space-y-2 min-w-0">
           <EventRow
-            v-for="event in filteredEvents"
+            v-for="event in filteredEventsSorted"
             :key="`${event.id}-${event.timestamp}`"
             :event="event"
             :gradient-class="getGradientForSession(event.session_id)"
@@ -46,13 +88,20 @@
       </div>
       
       <div v-if="filteredEvents.length === 0" class="text-center py-12 mobile:py-8 text-[var(--theme-text-tertiary)] animate-fadeIn">
-        <div class="w-16 h-16 mx-auto mb-4 rounded-2xl bg-gradient-to-br from-[var(--theme-bg-tertiary)] to-[var(--theme-bg-quaternary)] flex items-center justify-center shadow-inner">
-          <svg class="w-8 h-8 text-[var(--theme-text-quaternary)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"></path>
-          </svg>
+        <div class="w-20 h-20 mx-auto mb-6 rounded-3xl bg-gradient-to-br from-[var(--theme-bg-tertiary)] via-[var(--theme-bg-quaternary)] to-[var(--theme-bg-tertiary)] flex items-center justify-center shadow-inner border border-[var(--theme-border-primary)]/20">
+          <div class="relative">
+            <Activity class="w-8 h-8 text-[var(--theme-text-quaternary)]" />
+            <div class="absolute -top-1 -right-1 w-3 h-3 rounded-full bg-gradient-to-br from-green-400 to-green-600 animate-pulse"></div>
+          </div>
         </div>
-        <p class="text-base mobile:text-sm font-semibold text-[var(--theme-text-secondary)] mb-1">No events yet</p>
-        <p class="text-sm mobile:text-xs text-[var(--theme-text-tertiary)]">Events will appear here as they stream in</p>
+        <p class="text-lg mobile:text-base font-semibold text-[var(--theme-text-secondary)] mb-2">Waiting for events...</p>
+        <p class="text-sm mobile:text-xs text-[var(--theme-text-tertiary)] max-w-sm mx-auto">Your live event stream will appear here as activities are detected from your applications</p>
+        <div class="mt-6 flex justify-center">
+          <div class="flex items-center gap-2 px-4 py-2 rounded-full bg-[var(--theme-bg-tertiary)]/30 border border-[var(--theme-border-primary)]/20">
+            <div class="w-2 h-2 rounded-full bg-gradient-to-br from-green-400 to-green-600 animate-pulse"></div>
+            <span class="text-xs text-[var(--theme-text-tertiary)]">Live monitoring active</span>
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -64,6 +113,9 @@ import { Activity } from 'lucide-vue-next';
 import type { HookEvent, FilterOptions } from '../types';
 import EventRow from './EventRow.vue';
 import { useEventColors } from '../composables/useEventColors';
+import { Select, SelectContent, SelectItem, SelectSeparator, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Button } from '@/components/ui/button'
+import { Badge } from '@/components/ui/badge'
 
 const props = defineProps<{
   events: HookEvent[];
@@ -78,6 +130,7 @@ const props = defineProps<{
 const emit = defineEmits<{
   'update:stickToBottom': [value: boolean];
   'update:filters': [filters: typeof props.filters];
+  'scroll-sync': [scrollTop: number];
 }>();
 
 const scrollContainer = ref<HTMLElement>();
@@ -86,17 +139,47 @@ const { getGradientForSession, getColorForSession, getGradientForApp, getColorFo
 const projectOf = (e: HookEvent) => (e as any).project || (e as any).payload?.project || e.source_app;
 
 const filterOptions = ref<FilterOptions>({ source_apps: [], session_ids: [], hook_event_types: [] });
-const localFilters = ref({ ...props.filters });
+const localFilters = ref({ 
+  sessionId: props.filters.sessionId || '__ALL__',
+  eventType: props.filters.eventType || '__ALL__'
+});
 
-const hasActiveFilters = computed(() => localFilters.value.sessionId || localFilters.value.eventType);
-const emitFilters = () => emit('update:filters', { ...localFilters.value });
-const clearLocalFilters = () => { localFilters.value = { sessionId: '', eventType: '' }; emitFilters(); };
+// Watch for changes in parent filters to keep local state in sync
+watch(() => props.filters, (newFilters) => {
+  localFilters.value = { 
+    sessionId: newFilters.sessionId || '__ALL__',
+    eventType: newFilters.eventType || '__ALL__'
+  };
+}, { deep: true });
+
+const hasActiveFilters = computed(() => 
+  (localFilters.value.sessionId && localFilters.value.sessionId !== '__ALL__') || 
+  (localFilters.value.eventType && localFilters.value.eventType !== '__ALL__')
+);
+const emitFilters = () => emit('update:filters', { 
+  sessionId: localFilters.value.sessionId === '__ALL__' ? '' : localFilters.value.sessionId,
+  eventType: localFilters.value.eventType === '__ALL__' ? '' : localFilters.value.eventType
+});
+const clearLocalFilters = () => { 
+  localFilters.value = { sessionId: '__ALL__', eventType: '__ALL__' }; 
+  emitFilters(); 
+};
 
 const fetchFilterOptions = async () => {
   try {
     const res = await fetch('http://localhost:4000/events/filter-options');
     if (res.ok) filterOptions.value = await res.json();
   } catch {}
+};
+
+const updateSessionFilter = (value: any) => {
+  localFilters.value.sessionId = (value === '__ALL__' || !value) ? '' : String(value);
+  emitFilters();
+};
+
+const updateEventTypeFilter = (value: any) => {
+  localFilters.value.eventType = (value === '__ALL__' || !value) ? '' : String(value);
+  emitFilters();
 };
 
 onMounted(() => { fetchFilterOptions(); setInterval(fetchFilterOptions, 10000); });
@@ -193,24 +276,31 @@ const filteredEvents = computed(() => {
   });
 });
 
-const scrollToBottom = () => {
+const filteredEventsSorted = computed(() => {
+  return [...filteredEvents.value].sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+});
+
+const scrollToTop = () => {
   if (scrollContainer.value) {
-    scrollContainer.value.scrollTop = scrollContainer.value.scrollHeight;
+    scrollContainer.value.scrollTop = 0;
   }
 };
 
 const handleScroll = () => {
   if (!scrollContainer.value) return;
-  const { scrollTop, scrollHeight, clientHeight } = scrollContainer.value;
-  const isAtBottom = scrollHeight - scrollTop - clientHeight < 50;
-  if (isAtBottom !== props.stickToBottom) emit('update:stickToBottom', isAtBottom);
+  const { scrollTop } = scrollContainer.value;
+  const isAtTop = scrollTop < 50;
+  if (isAtTop !== props.stickToBottom) emit('update:stickToBottom', isAtTop);
+  
+  // Emit scroll position for activity timeline synchronization
+  emit('scroll-sync', scrollTop);
 };
 
 watch(() => props.events.length, async () => {
-  if (props.stickToBottom) { await nextTick(); scrollToBottom(); }
+  if (props.stickToBottom) { await nextTick(); scrollToTop(); }
 });
 
-watch(() => props.stickToBottom, (shouldStick) => { if (shouldStick) { scrollToBottom(); } });
+watch(() => props.stickToBottom, (shouldStick) => { if (shouldStick) { scrollToTop(); } });
 </script>
 
 <style scoped>

@@ -1,7 +1,7 @@
 <template>
   <div class="relative max-w-full w-full">
-    <div 
-      class="group relative p-2.5 mobile:p-2 rounded-lg border border-[var(--theme-border-primary)]/15 hover:border-[var(--theme-primary)]/25 bg-[var(--theme-bg-primary)]/90 transition-all duration-200 cursor-pointer shadow-sm hover:shadow-md w-full overflow-hidden min-h-[100px]"
+    <Card 
+      class="group relative p-3 mobile:p-2.5 cursor-pointer transition-all duration-300 hover:shadow-lg hover:scale-[1.01] border-border/10 hover:border-primary/20 bg-card/95 backdrop-blur-sm w-full overflow-hidden min-h-[100px]"
       @click="toggleExpanded"
     >
       <div class="ml-0">
@@ -125,7 +125,7 @@
         </div>
         
       </div>
-    </div>
+    </Card>
     <ChatTranscriptModal 
       v-if="frozenChatData.length > 0"
       :key="`chat-modal-${event.session_id}-${event.timestamp}`"
@@ -206,7 +206,7 @@ import { Check, MessageSquare, Wrench, Bell, Square, Box, FileText, MoreHorizont
 import type { HookEvent } from '../types';
 import ChatTranscriptModal from './ChatTranscriptModal.vue';
 import EventDetailsModal from './EventDetailsModal.vue';
-import { Badge } from '@/components/ui'
+import { Badge, Card } from '@/components/ui'
 
 const props = defineProps<{
   event: HookEvent;

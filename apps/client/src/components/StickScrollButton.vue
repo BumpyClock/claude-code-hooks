@@ -10,14 +10,14 @@
     :title="stickToBottom ? 'Disable auto-scroll' : 'Enable auto-scroll'"
   >
     <component 
-      :is="stickToBottom ? ArrowDownToLine : ArrowDown"
+      :is="stickToBottom ? ArrowUpToLine : ArrowUp"
       class="w-5 h-5 mobile:w-4 mobile:h-4"
     />
   </button>
 </template>
 
 <script setup lang="ts">
-import { ArrowDown, ArrowDownToLine } from 'lucide-vue-next';
+import { ArrowUp, ArrowUpToLine } from 'lucide-vue-next';
 
 defineProps<{
   stickToBottom: boolean;

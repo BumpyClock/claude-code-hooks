@@ -54,10 +54,10 @@
   --theme-primary-dark: #1d4ed8;
   
   /* Background colors */
-  --theme-bg-primary: #111827;
-  --theme-bg-secondary: #1f2937;
-  --theme-bg-tertiary: #374151;
-  --theme-bg-quaternary: #4b5563;
+  --theme-bg-primary: #0f0f0f;
+  --theme-bg-secondary: #111111;
+  --theme-bg-tertiary: #1a1a1a;
+  --theme-bg-quaternary: #2a2a2a;
   
   /* Text colors */
   --theme-text-primary: #f9fafb;

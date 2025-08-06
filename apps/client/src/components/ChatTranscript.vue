@@ -1,223 +1,237 @@
 <template>
-  <div class="bg-white dark:bg-gray-800 rounded-lg p-4 h-full overflow-y-auto space-y-3 border-2 border-gray-300 dark:border-gray-600">
+  <div class="bg-background rounded-lg p-4 h-full overflow-y-auto space-y-4 border border-border">
     <div v-for="(item, index) in chatItems" :key="index">
       <!-- User Message -->
-      <div v-if="item.type === 'user' && item.message" 
-           class="p-3 rounded-lg bg-blue-50 dark:bg-blue-900/30">
+      <Card v-if="item.type === 'user' && item.message" 
+           class="p-4 bg-primary/5 border-primary/20">
         <div class="flex items-start justify-between">
           <div class="flex items-start space-x-3 flex-1">
-            <span class="text-lg font-semibold px-3 py-1 rounded-full flex-shrink-0 bg-blue-500 text-white">
-              User
-            </span>
+            <Badge class="text-sm font-semibold px-3 py-1.5 bg-primary text-primary-foreground">
+              👤 User
+            </Badge>
             <div class="flex-1">
               <!-- Handle string content -->
               <p v-if="typeof item.message.content === 'string'" 
-                 class="text-lg text-gray-800 dark:text-gray-100 whitespace-pre-wrap font-medium">
+                 class="text-base text-foreground whitespace-pre-wrap font-medium leading-relaxed">
                 {{ item.message.content.includes('<command-') ? cleanCommandContent(item.message.content) : item.message.content }}
               </p>
               <!-- Handle array content -->
-              <div v-else-if="Array.isArray(item.message.content)" class="space-y-2">
+              <div v-else-if="Array.isArray(item.message.content)" class="space-y-3">
                 <div v-for="(content, cIndex) in item.message.content" :key="cIndex">
                   <!-- Text content -->
                   <p v-if="content.type === 'text'" 
-                     class="text-lg text-gray-800 dark:text-gray-100 whitespace-pre-wrap font-medium">
+                     class="text-base text-foreground whitespace-pre-wrap font-medium leading-relaxed">
                     {{ content.text }}
                   </p>
                   <!-- Tool result -->
                   <div v-else-if="content.type === 'tool_result'" 
-                       class="bg-gray-100 dark:bg-gray-900 p-2 rounded">
-                    <span class="text-sm font-mono text-gray-600 dark:text-gray-400">Tool Result:</span>
-                    <pre class="text-sm text-gray-700 dark:text-gray-300 mt-1">{{ content.content }}</pre>
+                       class="bg-muted p-3 rounded-md border border-border">
+                    <Badge variant="outline" size="xs" class="mb-2">🔧 Tool Result</Badge>
+                    <pre class="text-sm text-foreground mt-1 overflow-x-auto">{{ content.content }}</pre>
                   </div>
                 </div>
               </div>
               <!-- Metadata -->
-              <div v-if="item.timestamp" class="mt-2 text-xs text-gray-500 dark:text-gray-400">
+              <div v-if="item.timestamp" class="mt-2 text-xs text-muted-foreground">
                 {{ formatTimestamp(item.timestamp) }}
               </div>
             </div>
           </div>
           <!-- Action Buttons -->
           <div class="flex items-center space-x-1 ml-2">
-            <!-- Show Details Button -->
-            <button
+            <Button
               @click="toggleDetails(index)"
-              class="px-2 py-1 text-xs font-medium text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 rounded transition-colors"
+              variant="ghost"
+              size="xs"
+              class="text-xs"
             >
               {{ isDetailsExpanded(index) ? 'Hide' : 'Show' }} Details
-            </button>
-            <!-- Copy Button -->
-            <button
+            </Button>
+            <Button
               @click="copyMessage(index)"
-              class="px-2 py-1 text-xs font-medium text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 rounded transition-colors flex items-center"
+              variant="ghost" 
+              size="xs"
+              class="text-xs"
               :title="'Copy message'"
             >
               {{ getCopyButtonText(index) }}
-            </button>
+            </Button>
           </div>
         </div>
         <!-- Details Section -->
-        <div v-if="isDetailsExpanded(index)" class="mt-3 p-3 bg-gray-100 dark:bg-gray-900 rounded-lg">
-          <pre class="text-xs text-gray-700 dark:text-gray-300 overflow-x-auto">{{ JSON.stringify(item, null, 2) }}</pre>
+        <div v-if="isDetailsExpanded(index)" class="mt-3 p-3 bg-muted rounded-lg border border-border">
+          <pre class="text-xs text-muted-foreground overflow-x-auto">{{ JSON.stringify(item, null, 2) }}</pre>
         </div>
-      </div>
+      </Card>
 
       <!-- Assistant Message -->
-      <div v-else-if="item.type === 'assistant' && item.message" 
-           class="p-3 rounded-lg bg-gray-50 dark:bg-gray-900/30">
+      <Card v-else-if="item.type === 'assistant' && item.message" 
+           class="p-4 bg-secondary/5 border-secondary/20">
         <div class="flex items-start justify-between">
           <div class="flex items-start space-x-3 flex-1">
-            <span class="text-lg font-semibold px-3 py-1 rounded-full flex-shrink-0 bg-gray-500 text-white">
-              Assistant
-            </span>
+            <Badge class="text-sm font-semibold px-3 py-1.5 bg-secondary text-secondary-foreground">
+              🤖 Assistant
+            </Badge>
             <div class="flex-1">
               <!-- Handle content array -->
-              <div v-if="Array.isArray(item.message.content)" class="space-y-2">
+              <div v-if="Array.isArray(item.message.content)" class="space-y-3">
                 <div v-for="(content, cIndex) in item.message.content" :key="cIndex">
                   <!-- Text content -->
                   <p v-if="content.type === 'text'" 
-                     class="text-lg text-gray-800 dark:text-gray-100 whitespace-pre-wrap font-medium">
+                     class="text-base text-foreground whitespace-pre-wrap font-medium leading-relaxed">
                     {{ content.text }}
                   </p>
                   <!-- Tool use -->
                   <div v-else-if="content.type === 'tool_use'" 
-                       class="bg-yellow-50 dark:bg-yellow-900/20 p-3 rounded border border-yellow-200 dark:border-yellow-800">
+                       class="bg-warning/5 p-3 rounded-md border border-warning/20">
                     <div class="flex items-center space-x-2 mb-2">
-                      <span class="text-2xl">🔧</span>
-                      <span class="font-semibold text-yellow-800 dark:text-yellow-200">{{ content.name }}</span>
+                      <Badge variant="outline" class="bg-warning/10 text-warning-foreground border-warning/30">
+                        🔧 {{ content.name }}
+                      </Badge>
                     </div>
-                    <pre class="text-sm text-gray-700 dark:text-gray-300 overflow-x-auto">{{ JSON.stringify(content.input, null, 2) }}</pre>
+                    <pre class="text-sm text-foreground overflow-x-auto bg-muted p-2 rounded">{{ JSON.stringify(content.input, null, 2) }}</pre>
                   </div>
                 </div>
               </div>
               <!-- Usage info -->
-              <div v-if="item.message.usage" class="mt-2 text-xs text-gray-500 dark:text-gray-400">
-                Tokens: {{ item.message.usage.input_tokens }} in / {{ item.message.usage.output_tokens }} out
+              <div v-if="item.message.usage" class="mt-2">
+                <Badge variant="outline" size="xs" class="text-xs text-muted-foreground">
+                  📊 Tokens: {{ item.message.usage.input_tokens }} in / {{ item.message.usage.output_tokens }} out
+                </Badge>
               </div>
               <!-- Timestamp -->
-              <div v-if="item.timestamp" class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+              <div v-if="item.timestamp" class="mt-1 text-xs text-muted-foreground">
                 {{ formatTimestamp(item.timestamp) }}
               </div>
             </div>
           </div>
           <!-- Action Buttons -->
           <div class="flex items-center space-x-1 ml-2">
-            <!-- Show Details Button -->
-            <button
+            <Button
               @click="toggleDetails(index)"
-              class="px-2 py-1 text-xs font-medium text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 rounded transition-colors"
+              variant="ghost"
+              size="xs"
+              class="text-xs"
             >
               {{ isDetailsExpanded(index) ? 'Hide' : 'Show' }} Details
-            </button>
-            <!-- Copy Button -->
-            <button
+            </Button>
+            <Button
               @click="copyMessage(index)"
-              class="px-2 py-1 text-xs font-medium text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 rounded transition-colors flex items-center"
+              variant="ghost" 
+              size="xs"
+              class="text-xs"
               :title="'Copy message'"
             >
               {{ getCopyButtonText(index) }}
-            </button>
+            </Button>
           </div>
         </div>
         <!-- Details Section -->
-        <div v-if="isDetailsExpanded(index)" class="mt-3 p-3 bg-gray-100 dark:bg-gray-900 rounded-lg">
-          <pre class="text-xs text-gray-700 dark:text-gray-300 overflow-x-auto">{{ JSON.stringify(item, null, 2) }}</pre>
+        <div v-if="isDetailsExpanded(index)" class="mt-3 p-3 bg-muted rounded-lg border border-border">
+          <pre class="text-xs text-muted-foreground overflow-x-auto">{{ JSON.stringify(item, null, 2) }}</pre>
         </div>
-      </div>
+      </Card>
 
       <!-- System Message -->
-      <div v-else-if="item.type === 'system'" 
-           class="p-3 rounded-lg bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800">
+      <Card v-else-if="item.type === 'system'" 
+           class="p-4 bg-warning/5 border-warning/20">
         <div class="flex items-start justify-between">
           <div class="flex items-start space-x-3 flex-1">
-            <span class="text-lg font-semibold px-3 py-1 rounded-full flex-shrink-0 bg-amber-600 text-white">
-              System
-            </span>
+            <Badge class="text-sm font-semibold px-3 py-1.5 bg-warning text-warning-foreground">
+              ⚙️ System
+            </Badge>
             <div class="flex-1">
-              <p class="text-lg text-gray-800 dark:text-gray-100 font-medium">
+              <p class="text-base text-foreground font-medium leading-relaxed">
                 {{ cleanSystemContent(item.content || '') }}
               </p>
               <!-- Tool use ID if present -->
-              <div v-if="item.toolUseID" class="mt-1 text-xs text-gray-500 dark:text-gray-400 font-mono">
-                Tool ID: {{ item.toolUseID }}
+              <div v-if="item.toolUseID" class="mt-1">
+                <Badge variant="outline" size="xs" class="font-mono">
+                  ID: {{ item.toolUseID }}
+                </Badge>
               </div>
               <!-- Timestamp -->
-              <div v-if="item.timestamp" class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+              <div v-if="item.timestamp" class="mt-1 text-xs text-muted-foreground">
                 {{ formatTimestamp(item.timestamp) }}
               </div>
             </div>
           </div>
           <!-- Action Buttons -->
           <div class="flex items-center space-x-1 ml-2">
-            <!-- Show Details Button -->
-            <button
+            <Button
               @click="toggleDetails(index)"
-              class="px-2 py-1 text-xs font-medium text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 rounded transition-colors"
+              variant="ghost"
+              size="xs"
+              class="text-xs"
             >
               {{ isDetailsExpanded(index) ? 'Hide' : 'Show' }} Details
-            </button>
-            <!-- Copy Button -->
-            <button
+            </Button>
+            <Button
               @click="copyMessage(index)"
-              class="px-2 py-1 text-xs font-medium text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 rounded transition-colors flex items-center"
+              variant="ghost" 
+              size="xs"
+              class="text-xs"
               :title="'Copy message'"
             >
               {{ getCopyButtonText(index) }}
-            </button>
+            </Button>
           </div>
         </div>
         <!-- Details Section -->
-        <div v-if="isDetailsExpanded(index)" class="mt-3 p-3 bg-gray-100 dark:bg-gray-900 rounded-lg">
-          <pre class="text-xs text-gray-700 dark:text-gray-300 overflow-x-auto">{{ JSON.stringify(item, null, 2) }}</pre>
+        <div v-if="isDetailsExpanded(index)" class="mt-3 p-3 bg-muted rounded-lg border border-border">
+          <pre class="text-xs text-muted-foreground overflow-x-auto">{{ JSON.stringify(item, null, 2) }}</pre>
         </div>
-      </div>
+      </Card>
 
       <!-- Fallback for simple chat format -->
-      <div v-else-if="item.role" 
-           class="p-3 rounded-lg"
-           :class="item.role === 'user' ? 'bg-blue-50 dark:bg-blue-900/30' : 'bg-gray-50 dark:bg-gray-900/30'">
+      <Card v-else-if="item.role" 
+           class="p-4"
+           :class="item.role === 'user' ? 'bg-primary/5 border-primary/20' : 'bg-secondary/5 border-secondary/20'">
         <div class="flex items-start justify-between">
           <div class="flex items-start space-x-3 flex-1">
-            <span class="text-lg font-semibold px-3 py-1 rounded-full flex-shrink-0"
-                  :class="item.role === 'user' ? 'bg-blue-500 text-white' : 'bg-gray-500 text-white'">
-              {{ item.role === 'user' ? 'User' : 'Assistant' }}
-            </span>
+            <Badge class="text-sm font-semibold px-3 py-1.5"
+                  :class="item.role === 'user' ? 'bg-primary text-primary-foreground' : 'bg-secondary text-secondary-foreground'">
+              {{ item.role === 'user' ? '👤 User' : '🤖 Assistant' }}
+            </Badge>
             <div class="flex-1">
-              <p class="text-lg text-gray-800 dark:text-gray-100 whitespace-pre-wrap font-medium">
+              <p class="text-base text-foreground whitespace-pre-wrap font-medium leading-relaxed">
                 {{ item.content }}
               </p>
             </div>
           </div>
           <!-- Action Buttons -->
           <div class="flex items-center space-x-1 ml-2">
-            <!-- Show Details Button -->
-            <button
+            <Button
               @click="toggleDetails(index)"
-              class="px-2 py-1 text-xs font-medium text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 rounded transition-colors"
+              variant="ghost"
+              size="xs"
+              class="text-xs"
             >
               {{ isDetailsExpanded(index) ? 'Hide' : 'Show' }} Details
-            </button>
-            <!-- Copy Button -->
-            <button
+            </Button>
+            <Button
               @click="copyMessage(index)"
-              class="px-2 py-1 text-xs font-medium text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 rounded transition-colors flex items-center"
+              variant="ghost" 
+              size="xs"
+              class="text-xs"
               :title="'Copy message'"
             >
               {{ getCopyButtonText(index) }}
-            </button>
+            </Button>
           </div>
         </div>
         <!-- Details Section -->
-        <div v-if="isDetailsExpanded(index)" class="mt-3 p-3 bg-gray-100 dark:bg-gray-900 rounded-lg">
-          <pre class="text-xs text-gray-700 dark:text-gray-300 overflow-x-auto">{{ JSON.stringify(item, null, 2) }}</pre>
+        <div v-if="isDetailsExpanded(index)" class="mt-3 p-3 bg-muted rounded-lg border border-border">
+          <pre class="text-xs text-muted-foreground overflow-x-auto">{{ JSON.stringify(item, null, 2) }}</pre>
         </div>
-      </div>
+      </Card>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
 import { computed, ref } from 'vue';
+import { Badge, Card, Button } from '@/components/ui';
 
 const props = defineProps<{
   chat: any[];
@@ -255,14 +269,6 @@ const formatTimestamp = (timestamp: string) => {
   const date = new Date(timestamp);
   return date.toLocaleTimeString();
 };
-
-// const cleanContent = (content: string) => {
-//   // Remove command message tags
-//   return content
-//     .replace(/<command-message>.*?<\/command-message>/gs, '')
-//     .replace(/<command-name>.*?<\/command-name>/gs, '')
-//     .trim();
-// };
 
 const cleanSystemContent = (content: string) => {
   // Remove ANSI escape codes

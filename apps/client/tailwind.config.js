@@ -4,94 +4,101 @@ export default {
     "./index.html",
     "./src/**/*.{vue,js,ts,jsx,tsx}",
   ],
-  darkMode: 'class',
+  darkMode: ['class', "class"],
   theme: {
-    extend: {
-      screens: {
-        'mobile': {'max': '699px'}, // Custom mobile breakpoint for < 700px
-      },
-      colors: {
-        // shadcn-vue semantic colors
-        border: 'hsl(var(--border))',
-        input: 'hsl(var(--input))',
-        ring: 'hsl(var(--ring))',
-        background: 'hsl(var(--background))',
-        foreground: 'hsl(var(--foreground))',
-        primary: {
-          DEFAULT: 'hsl(var(--primary))',
-          foreground: 'hsl(var(--primary-foreground))',
-        },
-        secondary: {
-          DEFAULT: 'hsl(var(--secondary))',
-          foreground: 'hsl(var(--secondary-foreground))',
-        },
-        destructive: {
-          DEFAULT: 'hsl(var(--destructive))',
-          foreground: 'hsl(var(--destructive-foreground))',
-        },
-        muted: {
-          DEFAULT: 'hsl(var(--muted))',
-          foreground: 'hsl(var(--muted-foreground))',
-        },
-        accent: {
-          DEFAULT: 'hsl(var(--accent))',
-          foreground: 'hsl(var(--accent-foreground))',
-        },
-        popover: {
-          DEFAULT: 'hsl(var(--popover))',
-          foreground: 'hsl(var(--popover-foreground))',
-        },
-        card: {
-          DEFAULT: 'hsl(var(--card))',
-          foreground: 'hsl(var(--card-foreground))',
-        },
-        // Theme-aware colors using CSS custom properties
-        'theme': {
-          'primary': 'var(--theme-primary)',
-          'primary-hover': 'var(--theme-primary-hover)',
-          'primary-light': 'var(--theme-primary-light)',
-          'primary-dark': 'var(--theme-primary-dark)',
-          'bg': {
-            'primary': 'var(--theme-bg-primary)',
-            'secondary': 'var(--theme-bg-secondary)',
-            'tertiary': 'var(--theme-bg-tertiary)',
-            'quaternary': 'var(--theme-bg-quaternary)',
-          },
-          'text': {
-            'primary': 'var(--theme-text-primary)',
-            'secondary': 'var(--theme-text-secondary)',
-            'tertiary': 'var(--theme-text-tertiary)',
-            'quaternary': 'var(--theme-text-quaternary)',
-          },
-          'border': {
-            'primary': 'var(--theme-border-primary)',
-            'secondary': 'var(--theme-border-secondary)',
-            'tertiary': 'var(--theme-border-tertiary)',
-          },
-          'accent': {
-            'success': 'var(--theme-accent-success)',
-            'warning': 'var(--theme-accent-warning)',
-            'error': 'var(--theme-accent-error)',
-            'info': 'var(--theme-accent-info)',
-          }
-        }
-      },
-      boxShadow: {
-        'theme': 'var(--theme-shadow)',
-        'theme-lg': 'var(--theme-shadow-lg)',
-      },
-      borderRadius: {
-        lg: 'var(--radius)',
-        md: 'calc(var(--radius) - 2px)',
-        sm: 'calc(var(--radius) - 4px)',
-      },
-      transitionProperty: {
-        'theme': 'var(--theme-transition)',
-        'theme-fast': 'var(--theme-transition-fast)',
-      }
-    },
+  	extend: {
+  		screens: {
+  			mobile: {
+  				max: '699px'
+  			}
+  		},
+  		colors: {
+  			border: 'hsl(var(--border))',
+  			input: 'hsl(var(--input))',
+  			ring: 'hsl(var(--ring))',
+  			background: 'hsl(var(--background))',
+  			foreground: 'hsl(var(--foreground))',
+  			primary: {
+  				DEFAULT: 'hsl(var(--primary))',
+  				foreground: 'hsl(var(--primary-foreground))'
+  			},
+  			secondary: {
+  				DEFAULT: 'hsl(var(--secondary))',
+  				foreground: 'hsl(var(--secondary-foreground))'
+  			},
+  			destructive: {
+  				DEFAULT: 'hsl(var(--destructive))',
+  				foreground: 'hsl(var(--destructive-foreground))'
+  			},
+  			muted: {
+  				DEFAULT: 'hsl(var(--muted))',
+  				foreground: 'hsl(var(--muted-foreground))'
+  			},
+  			accent: {
+  				DEFAULT: 'hsl(var(--accent))',
+  				foreground: 'hsl(var(--accent-foreground))'
+  			},
+  			popover: {
+  				DEFAULT: 'hsl(var(--popover))',
+  				foreground: 'hsl(var(--popover-foreground))'
+  			},
+  			card: {
+  				DEFAULT: 'hsl(var(--card))',
+  				foreground: 'hsl(var(--card-foreground))'
+  			},
+  			theme: {
+  				primary: 'var(--theme-primary)',
+  				'primary-hover': 'var(--theme-primary-hover)',
+  				'primary-light': 'var(--theme-primary-light)',
+  				'primary-dark': 'var(--theme-primary-dark)',
+  				bg: {
+  					primary: 'var(--theme-bg-primary)',
+  					secondary: 'var(--theme-bg-secondary)',
+  					tertiary: 'var(--theme-bg-tertiary)',
+  					quaternary: 'var(--theme-bg-quaternary)'
+  				},
+  				text: {
+  					primary: 'var(--theme-text-primary)',
+  					secondary: 'var(--theme-text-secondary)',
+  					tertiary: 'var(--theme-text-tertiary)',
+  					quaternary: 'var(--theme-text-quaternary)'
+  				},
+  				border: {
+  					primary: 'var(--theme-border-primary)',
+  					secondary: 'var(--theme-border-secondary)',
+  					tertiary: 'var(--theme-border-tertiary)'
+  				},
+  				accent: {
+  					success: 'var(--theme-accent-success)',
+  					warning: 'var(--theme-accent-warning)',
+  					error: 'var(--theme-accent-error)',
+  					info: 'var(--theme-accent-info)'
+  				}
+  			},
+  			chart: {
+  				'1': 'hsl(var(--chart-1))',
+  				'2': 'hsl(var(--chart-2))',
+  				'3': 'hsl(var(--chart-3))',
+  				'4': 'hsl(var(--chart-4))',
+  				'5': 'hsl(var(--chart-5))'
+  			}
+  		},
+  		boxShadow: {
+  			theme: 'var(--theme-shadow)',
+  			'theme-lg': 'var(--theme-shadow-lg)'
+  		},
+  		borderRadius: {
+  			lg: 'var(--radius)',
+  			md: 'calc(var(--radius) - 2px)',
+  			sm: 'calc(var(--radius) - 4px)'
+  		},
+  		transitionProperty: {
+  			theme: 'var(--theme-transition)',
+  			'theme-fast': 'var(--theme-transition-fast)'
+  		}
+  	}
   },
-  plugins: [],
+  plugins: [require("tailwindcss-animate")],
   safelist: [
     // Background colors
     'bg-blue-500',

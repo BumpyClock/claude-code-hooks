@@ -1,112 +1,120 @@
 <template>
-  <Teleport to="body">
-    <Transition name="modal" @before-enter="lockScroll" @after-leave="unlockScroll">
-      <div v-if="isOpen" class="fixed inset-0 z-[100] flex items-center justify-center">
-        <div class="absolute inset-0 bg-black/60 backdrop-blur-sm" @click="$emit('close')"></div>
-        <div class="relative z-[101] w-[min(900px,95vw)] max-h-[85vh] overflow-auto rounded-xl border border-[var(--theme-border-primary)]/30 bg-[var(--theme-bg-primary)] shadow-2xl p-6">
-      <div class="flex items-center justify-between mb-4">
-        <h3 class="text-lg font-bold text-[var(--theme-text-primary)] flex items-center gap-2">
-          <component :is="eventIcon" class="h-6 w-6 text-[var(--theme-primary)]" />
+  <Dialog :open="isOpen" @update:open="handleOpenChange">
+    <DialogContent class="max-w-4xl max-h-[85vh] overflow-hidden flex flex-col">
+      <DialogHeader class="border-b border-border pb-4">
+        <DialogTitle class="flex items-center gap-3 text-xl">
+          <component :is="eventIcon" class="h-6 w-6 text-primary" />
           {{ event.hook_event_type }}
-          <span class="text-xs text-[var(--theme-text-tertiary)] ml-2">{{ formatTime(event.timestamp) }}</span>
-        </h3>
-        <Button @click="$emit('close')" variant="ghost" size="sm" square>
-          <X class="h-5 w-5" />
-        </Button>
-      </div>
-      <div class="space-y-4">
-        <div class="flex items-center gap-2 text-sm">
-          <span class="px-3 py-1 rounded-lg border bg-gradient-to-r from-[var(--theme-bg-tertiary)]/50 to-[var(--theme-bg-quaternary)]/50 text-[var(--theme-text-primary)] font-medium">{{ event.source_app }}</span>
-          <span class="px-3 py-1 rounded-lg border bg-[var(--theme-bg-tertiary)]/40 text-[var(--theme-text-secondary)] font-mono text-xs">{{ sessionIdShort }}</span>
-        </div>
-        
-        <div v-if="toolInfo" class="flex items-center gap-2 px-4 py-2 rounded-lg bg-[var(--theme-bg-tertiary)]/30 border border-[var(--theme-border-primary)]/20">
-          <component :is="actionIcon" class="h-5 w-5 text-[var(--theme-primary)]" />
-          <span class="font-semibold text-[var(--theme-text-primary)]">{{ toolInfo.tool }}</span>
-          <span v-if="toolInfo.detail" class="text-[var(--theme-text-secondary)]" :class="{ 'italic': event.hook_event_type === 'UserPromptSubmit' }">{{ toolInfo.detail }}</span>
-        </div>
-        
-        <div v-if="event.summary" class="px-4 py-3 rounded-lg border bg-gradient-to-r from-[var(--theme-primary)]/5 to-[var(--theme-primary)]/10 border-[var(--theme-primary)]/20">
-          <div class="flex items-start gap-2">
-            <FileText class="h-4 w-4 text-[var(--theme-primary)] mt-0.5" />
-            <span class="text-[var(--theme-text-primary)] font-medium">{{ event.summary }}</span>
+          <Badge variant="outline" size="sm" class="ml-2 font-mono text-xs">
+            {{ formatTime(event.timestamp) }}
+          </Badge>
+        </DialogTitle>
+      </DialogHeader>
+
+      <div class="flex-1 overflow-y-auto space-y-6 py-4">
+        <!-- App and Session Info -->
+        <div class="flex flex-wrap items-center gap-3">
+          <div class="flex items-center gap-2">
+            <Badge variant="secondary" size="lg" class="font-semibold">
+              📱 {{ event.source_app }}
+            </Badge>
+            <Badge variant="outline" size="sm" class="font-mono">
+              🆔 {{ sessionIdShort }}
+            </Badge>
           </div>
         </div>
         
-        <div class="space-y-2">
-          <h4 class="text-sm font-bold text-[var(--theme-primary)] flex items-center gap-1.5">
-            <Package class="h-4 w-4" />
-            Payload
-          </h4>
-          <pre class="relative group/payload text-sm text-[var(--theme-text-primary)] bg-[var(--theme-bg-tertiary)] p-4 rounded-lg border border-[var(--theme-border-primary)]/40 overflow-x-auto max-h-96 font-mono shadow-inner">
-{{ formattedPayload }}
-            <Button
-              @click.stop="copyPayload"
-              variant="ghost"
-              size="xs"
-              square
-              class="absolute top-2 right-2 h-7 w-7 opacity-0 group-hover/payload:opacity-100"
-              :title="copyButtonTitle"
-            >
-              <Copy v-if="copyButtonIcon === 'copy'" class="h-4 w-4" />
-              <Check v-else-if="copyButtonIcon === 'check'" class="h-4 w-4 text-green-500" />
-              <X v-else class="h-4 w-4 text-red-500" />
-            </Button>
-          </pre>
-        </div>
+        <!-- Tool Information -->
+        <Card v-if="toolInfo" class="p-4 bg-primary/5 border-primary/20">
+          <div class="flex items-center gap-3 mb-3">
+            <component :is="actionIcon" class="h-6 w-6 text-primary" />
+            <div>
+              <h3 class="font-semibold text-lg text-card-foreground">{{ toolInfo.tool }}</h3>
+              <p v-if="toolInfo.detail" class="text-sm text-muted-foreground" :class="{ 'italic': event.hook_event_type === 'UserPromptSubmit' }">
+                {{ toolInfo.detail }}
+              </p>
+            </div>
+          </div>
+        </Card>
         
+        <!-- Summary -->
+        <Card v-if="event.summary" class="p-4 bg-secondary/5 border-secondary/20">
+          <div class="flex items-start gap-3">
+            <FileText class="h-5 w-5 text-secondary mt-0.5 flex-shrink-0" />
+            <div>
+              <h3 class="font-semibold text-card-foreground mb-1">Summary</h3>
+              <p class="text-sm text-card-foreground leading-relaxed">{{ event.summary }}</p>
+            </div>
+          </div>
+        </Card>
+        
+        <!-- Payload -->
+        <Card class="overflow-hidden">
+          <div class="p-4 bg-muted/30 border-b border-border">
+            <div class="flex items-center justify-between">
+              <div class="flex items-center gap-2">
+                <Package class="h-5 w-5 text-primary" />
+                <h3 class="font-semibold text-card-foreground">Event Payload</h3>
+              </div>
+              <Button
+                @click="copyPayload"
+                variant="outline"
+                size="sm"
+                class="gap-2"
+                :disabled="copyButtonIcon !== 'copy'"
+              >
+                <Copy v-if="copyButtonIcon === 'copy'" class="h-4 w-4" />
+                <Check v-else-if="copyButtonIcon === 'check'" class="h-4 w-4 text-green-500" />
+                <X v-else class="h-4 w-4 text-red-500" />
+                {{ copyButtonTitle }}
+              </Button>
+            </div>
+          </div>
+          <div class="p-0">
+            <pre class="p-4 text-sm text-foreground font-mono bg-background overflow-x-auto max-h-96 leading-relaxed">{{ formattedPayload }}</pre>
+          </div>
+        </Card>
       </div>
+
+      <div class="border-t border-border pt-4">
+        <div class="flex justify-end">
+          <Button @click="$emit('close')" variant="outline">
+            Close
+          </Button>
         </div>
       </div>
-    </Transition>
-  </Teleport>
+    </DialogContent>
+  </Dialog>
 </template>
 
-<style scoped>
-.modal-enter-active,
-.modal-leave-active {
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.modal-enter-from {
-  opacity: 0;
-}
-
-.modal-leave-to {
-  opacity: 0;
-}
-
-.modal-enter-active > div:last-child,
-.modal-leave-active > div:last-child {
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.modal-enter-from > div:last-child {
-  transform: scale(0.9) translateY(20px);
-  opacity: 0;
-}
-
-.modal-leave-to > div:last-child {
-  transform: scale(0.9) translateY(20px);
-  opacity: 0;
-}
-</style>
 <script setup lang="ts">
-import { computed, ref, onMounted, onUnmounted } from 'vue'
+import { computed, ref } from 'vue'
 import type { HookEvent } from '../types'
-import { Wrench, Check, Bell, Square, Box, MessageSquare, X, Copy, FileText, Package, Pencil, ListTodo, Files, LogOut } from 'lucide-vue-next'
-import { Button } from '@/components/ui'
+import { Wrench, Check, Bell, Square, Box, MessageSquare, Copy, FileText, Package, Pencil, ListTodo, Files, LogOut, X } from 'lucide-vue-next'
+import { Button, Badge, Card, Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui'
 import { formatTime } from '../utils'
 
-const props = defineProps<{ isOpen: boolean; event: HookEvent }>()
-const emit = defineEmits<{ close: [] }>()
+const props = defineProps<{ 
+  isOpen: boolean; 
+  event: HookEvent 
+}>()
 
-const copyButtonText = ref('Copy')
+const emit = defineEmits<{ 
+  close: [] 
+}>()
+
+const copyButtonText = ref('Copy Payload')
 const copyButtonIcon = computed(() => 
   copyButtonText.value === 'Copied!' ? 'check' : 
-  copyButtonText.value === 'Failed' ? 'x' : 'copy'
+  copyButtonText.value === 'Failed to Copy' ? 'x' : 'copy'
 )
 const copyButtonTitle = computed(() => copyButtonText.value)
+
+const handleOpenChange = (open: boolean) => {
+  if (!open) {
+    emit('close')
+  }
+}
 
 const sessionIdShort = computed(() => props.event.session_id.slice(0, 8))
 
@@ -119,8 +127,8 @@ const toolInfo = computed(() => {
   
   if (props.event.hook_event_type === 'UserPromptSubmit' && payload.prompt) {
     return {
-      tool: 'Prompt:',
-      detail: `"${payload.prompt.slice(0, 100)}${payload.prompt.length > 100 ? '...' : ''}"`
+      tool: 'User Prompt',
+      detail: `"${payload.prompt.slice(0, 200)}${payload.prompt.length > 200 ? '...' : ''}"`
     }
   }
   
@@ -129,7 +137,7 @@ const toolInfo = computed(() => {
     
     if (payload.tool_input) {
       if (payload.tool_input.command) {
-        info.detail = payload.tool_input.command.slice(0, 50) + (payload.tool_input.command.length > 50 ? '...' : '')
+        info.detail = payload.tool_input.command.slice(0, 100) + (payload.tool_input.command.length > 100 ? '...' : '')
       } else if (payload.tool_input.file_path) {
         info.detail = payload.tool_input.file_path.split('/').pop()
       } else if (payload.tool_input.pattern) {
@@ -158,34 +166,16 @@ const copyPayload = async () => {
     await navigator.clipboard.writeText(formattedPayload.value)
     copyButtonText.value = 'Copied!'
     setTimeout(() => {
-      copyButtonText.value = 'Copy'
+      copyButtonText.value = 'Copy Payload'
     }, 2000)
   } catch (err) {
     console.error('Failed to copy:', err)
-    copyButtonText.value = 'Failed'
+    copyButtonText.value = 'Failed to Copy'
     setTimeout(() => {
-      copyButtonText.value = 'Copy'
+      copyButtonText.value = 'Copy Payload'
     }, 2000)
   }
 }
-
-const lockScroll = () => {
-  document.body.style.overflow = 'hidden'
-}
-
-const unlockScroll = () => {
-  document.body.style.overflow = ''
-}
-
-onMounted(() => {
-  const handleEsc = (e: KeyboardEvent) => {
-    if (e.key === 'Escape' && props.isOpen) {
-      emit('close')
-    }
-  }
-  window.addEventListener('keydown', handleEsc)
-  onUnmounted(() => window.removeEventListener('keydown', handleEsc))
-})
 
 const eventIcon = computed(() => {
   switch (props.event.hook_event_type) {
@@ -197,5 +187,4 @@ const eventIcon = computed(() => {
     default: return MessageSquare
   }
 })
-
 </script>
