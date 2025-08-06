@@ -1,4 +1,4 @@
-// ABOUTME: Test suite for EventRow.vue component focusing on UBadge migration
+// ABOUTME: Test suite for EventRow.vue component focusing on Badge migration
 // ABOUTME: Validates badge/chip element conversion and functionality preservation
 
 import { describe, it, expect, beforeEach } from 'vitest'
@@ -7,9 +7,9 @@ import EventRow from '../EventRow.vue'
 import type { HookEvent } from '../../types'
 
 // Mock Nuxt UI components for testing
-const UBadge = {
-  name: 'UBadge',
-  template: '<span :class="`ubadge-${variant}-${color || \'default\'}`" v-bind="$attrs"><slot /></span>',
+const Badge = {
+  name: 'Badge',
+  template: '<span :class="`badge-${variant}-${color || \'default\'}`" v-bind="$attrs"><slot /></span>',
   props: ['variant', 'color', 'size', 'label']
 }
 
@@ -41,7 +41,7 @@ const createWrapper = (props = {}) => {
     props: { ...defaultProps, ...props },
     global: {
       components: {
-        UBadge,
+        Badge,
         // Mock other components
         ChatTranscriptModal: { template: '<div data-testid="chat-modal" />' },
         EventDetailsModal: { template: '<div data-testid="details-modal" />' }
@@ -67,9 +67,9 @@ const createWrapper = (props = {}) => {
   })
 }
 
-describe('EventRow UBadge Migration', () => {
+describe('EventRow Badge Migration', () => {
   describe('Session ID badges', () => {
-    it('should render session ID badges with UBadge variant="outline"', async () => {
+    it('should render session ID badges with Badge variant="outline"', async () => {
       const wrapper = createWrapper()
       
       // Test mobile session ID badge (line 23-25)
@@ -94,7 +94,7 @@ describe('EventRow UBadge Migration', () => {
   })
   
   describe('Event type badges', () => {
-    it('should render event type badges with UBadge variant="solid"', async () => {
+    it('should render event type badges with Badge variant="solid"', async () => {
       const wrapper = createWrapper()
       
       const eventTypeBadge = wrapper.find('[data-testid="event-type-badge"]')
@@ -124,7 +124,7 @@ describe('EventRow UBadge Migration', () => {
   })
   
   describe('App name badges', () => {
-    it('should render mobile app badge with UBadge variant="soft"', async () => {
+    it('should render mobile app badge with Badge variant="soft"', async () => {
       const wrapper = createWrapper()
       
       const mobileAppBadge = wrapper.find('[data-testid="mobile-app-badge"]')
@@ -133,7 +133,7 @@ describe('EventRow UBadge Migration', () => {
       expect(mobileAppBadge.text()).toBe('TestApp')
     })
     
-    it('should render desktop app badge with UBadge variant="soft"', async () => {
+    it('should render desktop app badge with Badge variant="soft"', async () => {
       const wrapper = createWrapper()
       
       const desktopAppBadge = wrapper.find('[data-testid="desktop-app-badge"]')
@@ -160,7 +160,7 @@ describe('EventRow UBadge Migration', () => {
   })
   
   describe('File chip elements', () => {
-    it('should render file chips with UBadge variant="outline"', async () => {
+    it('should render file chips with Badge variant="outline"', async () => {
       const groupEvent = {
         ...mockEvent,
         meta: {
@@ -242,7 +242,7 @@ describe('EventRow UBadge Migration', () => {
       
       const badges = wrapper.findAll('[class*="ubadge-"]')
       badges.forEach(badge => {
-        // UBadge should handle accessibility internally
+        // Badge should handle accessibility internally
         expect(badge.element.tagName).toBe('SPAN')
       })
     })

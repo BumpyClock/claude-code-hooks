@@ -25,14 +25,14 @@
               </p>
               <div v-else>
                 <p class="whitespace-pre-wrap break-words">{{ typeof truncatedContent === 'string' ? truncatedContent : truncatedContent.text }}</p>
-                <UButton
+                <Button
                   @click.stop="toggleContentExpansion"
                   variant="ghost"
                   size="xs"
                   class="mt-1 text-xs"
                 >
                   Show more
-                </UButton>
+                </Button>
               </div>
             </template>
             
@@ -50,7 +50,7 @@
                     </div>
                   </slot>
                 </div>
-                <UButton
+                <Button
                   v-if="content.length > 2 && !isExpanded"
                   @click.stop="toggleContentExpansion"
                   variant="ghost"
@@ -58,7 +58,7 @@
                   class="text-xs"
                 >
                   Show {{ content.length - 2 }} more items
-                </UButton>
+                </Button>
               </slot>
             </div>
           </div>
@@ -76,7 +76,7 @@
       <!-- Action Buttons -->
       <div class="flex items-center space-x-1 ml-2">
         <!-- Show/Hide Content Button (only if content is truncatable) -->
-        <UButton
+        <Button
           v-if="needsTruncation"
           @click.stop="toggleContentExpansion"
           variant="soft"
@@ -85,10 +85,10 @@
         >
           <component :is="isExpanded ? ChevronUp : ChevronDown" class="h-3 w-3" />
           {{ isExpanded ? 'Less' : 'More' }}
-        </UButton>
+        </Button>
         
         <!-- Show Details Button -->
-        <UButton
+        <Button
           @click.stop="toggleDetailsExpansion"
           variant="soft"
           size="xs"
@@ -96,10 +96,10 @@
         >
           <component :is="showDetails ? ChevronUp : ChevronDown" class="h-3 w-3" />
           {{ showDetails ? 'Hide' : 'Details' }}
-        </UButton>
+        </Button>
         
         <!-- Copy Button -->
-        <UButton
+        <Button
           @click.stop="handleCopy"
           variant="soft"
           size="xs"
@@ -107,7 +107,7 @@
           :title="'Copy message'"
         >
           <component :is="copyIcon" class="h-3.5 w-3.5" :class="copyIconClass" />
-        </UButton>
+        </Button>
       </div>
     </div>
     
@@ -143,6 +143,7 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 import { ChevronDown, ChevronUp, Copy, Check, X, Clock } from 'lucide-vue-next';
+import { Button } from '@/components/ui';
 import { useMessageActions } from '../composables/useMessageActions';
 import { MAX_TRUNCATE_LENGTH, DEFAULT_TRUNCATE_LINES } from '../utils';
 

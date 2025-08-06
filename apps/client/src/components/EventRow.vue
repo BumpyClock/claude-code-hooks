@@ -7,7 +7,7 @@
       <div class="ml-0">
         <div class="hidden mobile:block mb-1.5">
           <div class="flex items-center justify-between mb-1">
-            <UBadge 
+            <Badge 
               variant="soft"
               size="xs"
               class="font-semibold shadow-sm transition-all duration-200 hover:shadow-md hover:scale-105"
@@ -19,11 +19,11 @@
               data-testid="mobile-app-badge"
             >
               {{ event.source_app }}
-            </UBadge>
+            </Badge>
             <span class="text-[10px] text-[var(--theme-text-tertiary)]">{{ formatTime(event.timestamp) }}</span>
           </div>
           <div class="flex items-center space-x-2">
-            <UBadge 
+            <Badge 
               variant="outline"
               size="xs"
               class="text-[var(--theme-text-secondary)] bg-[var(--theme-bg-tertiary)]/50"
@@ -32,8 +32,8 @@
               data-testid="mobile-session-badge"
             >
               {{ sessionIdShort }}
-            </UBadge>
-            <UBadge 
+            </Badge>
+            <Badge 
               variant="solid"
               color="primary"
               size="xs"
@@ -42,14 +42,14 @@
             >
               <component :is="eventIcon" class="mr-1 h-3.5 w-3.5" />
               {{ event.hook_event_type }}
-            </UBadge>
+            </Badge>
           </div>
         </div>
 
         <div class="flex items-center justify-between mb-1 mobile:hidden min-h-[28px]">
           <div class="flex items-center space-x-3 w-full">
             <div class="flex items-center gap-2.5 flex-1 min-w-0">
-              <UBadge 
+              <Badge 
                 variant="soft"
                 size="sm"
                 class="text-[13px] font-semibold text-[var(--theme-text-primary)] bg-[var(--theme-bg-tertiary)]/50"
@@ -57,8 +57,8 @@
                 data-testid="desktop-app-badge"
               >
                 {{ event.source_app }}
-              </UBadge>
-              <UBadge 
+              </Badge>
+              <Badge 
                 variant="outline"
                 size="xs"
                 class="text-[10px] text-[var(--theme-text-tertiary)] bg-[var(--theme-bg-tertiary)]/40"
@@ -67,7 +67,7 @@
                 data-testid="desktop-session-badge"
               >
                 {{ sessionIdShort }}
-              </UBadge>
+              </Badge>
             </div>
           </div>
           <div class="ml-3 text-[10px] text-[var(--theme-text-tertiary)] whitespace-nowrap">{{ formatTime(event.timestamp) }}</div>
@@ -93,7 +93,7 @@
             {{ event.hook_event_type }} · {{ groupMeta.tool || actionLabel }} • {{ groupMeta.count }}
           </div>
           <div class="flex flex-wrap gap-1">
-            <UBadge 
+            <Badge 
               v-for="(chip, i) in readFilesUnique.slice(0,8)" 
               :key="chip+i"
               variant="outline"
@@ -102,7 +102,7 @@
               :data-testid="`file-chip-${i}`"
             >
               {{ chip }}
-            </UBadge>
+            </Badge>
             <span v-if="readFilesUnique.length>8" class="text-xs text-[var(--theme-text-tertiary)] flex items-center gap-0.5" data-testid="more-files-indicator">
               <MoreHorizontal class="h-3 w-3" />
               {{ readFilesUnique.length-8 }}
@@ -206,7 +206,7 @@ import { Check, MessageSquare, Wrench, Bell, Square, Box, FileText, MoreHorizont
 import type { HookEvent } from '../types';
 import ChatTranscriptModal from './ChatTranscriptModal.vue';
 import EventDetailsModal from './EventDetailsModal.vue';
-// UBadge component will be globally available via plugin
+import { Badge } from '@/components/ui'
 
 const props = defineProps<{
   event: HookEvent;
@@ -291,7 +291,7 @@ const groupMeta = computed(() => (props.event as any).meta || {});
 const readFiles = computed<string[]>(() => groupMeta.value.chips || []);
 const readFilesUnique = computed<string[]>(() => Array.from(new Set(readFiles.value)));
 
-// formattedPayload removed as copy functionality was removed with UBadge migration
+// formattedPayload removed as copy functionality was removed with Badge migration
 
 const toolInfo = computed(() => {
   const payload = props.event.payload;
@@ -330,5 +330,5 @@ const formatTime = (timestamp?: number) => {
   return date.toLocaleTimeString();
 };
 
-// Copy functions removed as they're no longer used after UBadge migration
+// Copy functions removed as they're no longer used after Badge migration
 </script>

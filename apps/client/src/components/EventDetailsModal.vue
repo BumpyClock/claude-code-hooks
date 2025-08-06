@@ -10,9 +10,9 @@
           {{ event.hook_event_type }}
           <span class="text-xs text-[var(--theme-text-tertiary)] ml-2">{{ formatTime(event.timestamp) }}</span>
         </h3>
-        <UButton @click="$emit('close')" variant="ghost" size="sm" square>
+        <Button @click="$emit('close')" variant="ghost" size="sm" square>
           <X class="h-5 w-5" />
-        </UButton>
+        </Button>
       </div>
       <div class="space-y-4">
         <div class="flex items-center gap-2 text-sm">
@@ -40,7 +40,7 @@
           </h4>
           <pre class="relative group/payload text-sm text-[var(--theme-text-primary)] bg-[var(--theme-bg-tertiary)] p-4 rounded-lg border border-[var(--theme-border-primary)]/40 overflow-x-auto max-h-96 font-mono shadow-inner">
 {{ formattedPayload }}
-            <UButton
+            <Button
               @click.stop="copyPayload"
               variant="ghost"
               size="xs"
@@ -51,7 +51,7 @@
               <Copy v-if="copyButtonIcon === 'copy'" class="h-4 w-4" />
               <Check v-else-if="copyButtonIcon === 'check'" class="h-4 w-4 text-green-500" />
               <X v-else class="h-4 w-4 text-red-500" />
-            </UButton>
+            </Button>
           </pre>
         </div>
         
@@ -95,6 +95,7 @@
 import { computed, ref, onMounted, onUnmounted } from 'vue'
 import type { HookEvent } from '../types'
 import { Wrench, Check, Bell, Square, Box, MessageSquare, X, Copy, FileText, Package, Pencil, ListTodo, Files, LogOut } from 'lucide-vue-next'
+import { Button } from '@/components/ui'
 import { formatTime } from '../utils'
 
 const props = defineProps<{ isOpen: boolean; event: HookEvent }>()

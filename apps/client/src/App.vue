@@ -9,6 +9,9 @@
             <svg class="w-4 h-4 text-[var(--theme-text-secondary)]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 13h18M5 17h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
           </div>
           <h1 class="text-sm font-semibold text-[var(--theme-text-secondary)] tracking-wide">Multi‑Agent Observability</h1>
+          <div class="text-xs px-2 py-1 rounded-md bg-green-500/10 border border-green-500/20 text-green-600">
+            shadcn-vue ✓
+          </div>
         </div>
         <div class="flex items-center gap-2">
           <span class="text-xs text-[var(--theme-text-tertiary)] border border-[var(--theme-border-primary)]/40 rounded-md px-2 py-1">{{ events.length }} events</span>
