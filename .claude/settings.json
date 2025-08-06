@@ -1,4 +1,39 @@
 {
+  "env": {
+      "CLAUDE_BASH_MAINTAIN_PROJECT_WORKING_DIR": "true"
+  },
+  "permissions": {
+    "allow": [
+      "mcp__playwright__playwright_navigate",
+      "Bash(npx playwright install:*)",
+      "mcp__playwright__browser_navigate",
+      "mcp__playwright__browser_wait_for",
+      "mcp__playwright__browser_click",
+      "mcp__playwright__browser_take_screenshot",
+      "mcp__playwright__browser_press_key",
+      "Bash(find:*)",
+      "Bash(ls:*)",
+      "mcp__sequentialthinking__sequentialthinking",
+      "Bash(bun add:*)",
+      "mcp__context7__resolve-library-id",
+      "mcp__context7__get-library-docs",
+      "Bash(bun install:*)",
+      "Bash(bun:*)",
+      "Bash(grep:*)",
+      "Bash(cat:*)",
+      "Bash(timeout:*)",
+      "Bash(npx vue-tsc:*)",
+      "Bash(node:*)",
+      "Bash(curl:*)",
+      "Bash(rm:*)",
+      "Bash(git add:*)",
+      "WebFetch(domain:ui.nuxt.com)",
+      "Bash(git stash:*)",
+      "Bash(git checkout:*)"
+    ],
+    "deny": []
+    
+  },
   "hooks": {
     "PreToolUse": [
       {
