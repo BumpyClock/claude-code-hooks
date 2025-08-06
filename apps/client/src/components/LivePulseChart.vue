@@ -35,20 +35,23 @@
       <LineChart
         v-if="hasData && chartData.length > 0"
         :data="chartData"
-        :categories="['events']"
+        :categories="seriesCategories"
         index="time"
-        :colors="['hsl(var(--primary))']"
-        :show-legend="false"
+        :colors="seriesColors"
+        :show-legend="true"
         :show-tooltip="true"
         :show-x-axis="false"
         :show-y-axis="false"
         :show-grid-line="false"
         :curve-type="CurveType.MonotoneX"
-        :margin="{ left: 0, right: 0, top: 10, bottom: 10 }"
+        :margin="{ left: 20, right: 20, top: 35, bottom: 35 }"
         :custom-tooltip="CustomChartTooltip"
-        class="h-[120px] w-full overflow-visible"
-        style="overflow: visible !important;"
-      />
+        class="h-[160px] w-full"
+      >
+        <template #default>
+          <div />
+        </template>
+      </LineChart>
       <div
         v-if="!hasData"
         class="absolute inset-0 flex items-center justify-center"
@@ -66,7 +69,11 @@
 import { ref, computed } from 'vue';
 import type { HookEvent, TimeRange } from '../types';
 import { LineChart } from '@/components/ui/chart-line';
+import { defaultColors as uiDefaultColors } from '@/components/ui/chart'
 import { CurveType } from '@unovis/ts';
+import { useEventColors } from '../composables/useEventColors';
+
+const defaultFallbackColor = (i: number) => uiDefaultColors(8)[i % 8]
 import CustomChartTooltip from './CustomChartTooltip.vue';
 
 const props = defineProps<{
@@ -81,8 +88,31 @@ const props = defineProps<{
 const timeRanges: TimeRange[] = ['15s', '30s', '1m', '3m', '5m'];
 const timeRange = ref<TimeRange>('1m');
 
+// Use the centralized event color system
+const { getHexColorForApp } = useEventColors();
+
 // Events are already filtered by the parent component (EventHeaderPulse gets fullyFilteredEvents from App.vue)
 const filteredEvents = computed(() => props.events);
+
+const projectColors = computed<Record<string, string>>(() => {
+  const map: Record<string, string> = {}
+  for (const e of props.events) {
+    const app = e.source_app || 'Unknown'
+    const hex = getHexColorForApp(app)
+    if (!map[app] && hex) map[app] = hex
+  }
+  return map
+})
+
+const seriesCategories = computed(() => {
+  const set = new Set<string>()
+  // include known colors first
+  Object.keys(projectColors.value).forEach(k => set.add(k))
+  // also add any source_app present in window range to ensure keys match data
+  for (const e of filteredEvents.value) set.add(e.source_app || 'Unknown')
+  return Array.from(set)
+})
+const seriesColors = computed(() => seriesCategories.value.map((app, i) => projectColors.value[app] || defaultFallbackColor(i)))
 
 const chartData = computed(() => {
   const now = Date.now();
@@ -99,45 +129,27 @@ const chartData = computed(() => {
     (event.timestamp || 0) >= startTime
   );
 
-  // Group events by time intervals (e.g., 5-second intervals)
-  const intervalMs = timeRangeMs / 20; // Create 20 data points
-  const intervals: Record<number, { 
-    total: number; 
-    eventTypes: Record<string, number>;
-    tools: Record<string, number>;
-  }> = {};
+  const intervalMs = timeRangeMs / 20;
+  const intervals: Record<number, Record<string, number>> = {};
 
   for (let i = 0; i < 20; i++) {
     const intervalStart = startTime + (i * intervalMs);
-    intervals[intervalStart] = { total: 0, eventTypes: {}, tools: {} };
+    intervals[intervalStart] = {};
   }
 
-  // Count events by type and tool in each interval
   recentEvents.forEach(event => {
     const eventTime = event.timestamp || 0;
     const intervalIndex = Math.floor((eventTime - startTime) / intervalMs);
     const intervalStart = startTime + (intervalIndex * intervalMs);
-    const eventType = event.hook_event_type || 'Unknown';
-    const toolName = event.payload?.tool_name;
-    
+    const app = event.source_app || 'Unknown';
     if (intervals[intervalStart] !== undefined) {
-      intervals[intervalStart].total++;
-      intervals[intervalStart].eventTypes[eventType] = (intervals[intervalStart].eventTypes[eventType] || 0) + 1;
-      
-      if (toolName) {
-        intervals[intervalStart].tools[toolName] = (intervals[intervalStart].tools[toolName] || 0) + 1;
-      }
+      intervals[intervalStart][app] = (intervals[intervalStart][app] || 0) + 1;
     }
   });
 
-  return Object.entries(intervals).map(([time, data]) => ({
-    time: new Date(parseInt(time)).toLocaleTimeString('en-US', { 
-      minute: '2-digit', 
-      second: '2-digit' 
-    }),
-    events: data.total,
-    eventTypes: data.eventTypes,
-    tools: data.tools
+  return Object.entries(intervals).map(([time, counts]) => ({
+    time: new Date(parseInt(time)).toLocaleTimeString('en-US', { minute: '2-digit', second: '2-digit' }),
+    ...seriesCategories.value.reduce((acc, app) => { acc[app] = counts[app] || 0; return acc }, {} as Record<string, number>)
   }));
 });
 

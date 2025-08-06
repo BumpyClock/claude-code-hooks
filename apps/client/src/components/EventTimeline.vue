@@ -9,18 +9,41 @@
     >
       <div class="relative overflow-x-hidden min-w-0">
         <div class="absolute left-32 top-0 bottom-0 w-px bg-gradient-to-b from-[var(--theme-border-primary)]/0 via-[var(--theme-border-primary)]/10 to-[var(--theme-border-primary)]/0"></div>
-        <TransitionGroup name="event" tag="div" class="space-y-3 mobile:space-y-2 min-w-0">
-          <EventRow
-            v-for="event in filteredEventsSorted"
-            :key="`${event.id}-${event.timestamp}`"
-            :event="event"
-            :gradient-class="getGradientForSession(event.session_id)"
-            :color-class="getColorForSession(event.session_id)"
-            :app-gradient-class="getGradientForApp(event.source_app)"
-            :app-color-class="getColorForApp(event.source_app)"
-            :app-hex-color="getHexColorForApp(event.source_app)"
-          />
-        </TransitionGroup>
+        <div class="space-y-3 mobile:space-y-2 min-w-0">
+          <template v-for="event in filteredEventsSorted" :key="getEventKey(event)">
+            <!-- Grouped Event Card with Animation -->
+            <div
+              v-if="'groupMeta' in event"
+              :class="getAnimationClasses(getEventKey(event))"
+              class="transition-all duration-200"
+            >
+              <GroupedEventCard
+                :event="event"
+                :gradient-class="getGradientForSession(event.session_id)"
+                :color-class="getColorForSession(event.session_id)"
+                :app-gradient-class="getGradientForApp(event.source_app)"
+                :app-color-class="getColorForApp(event.source_app)"
+                :app-hex-color="getHexColorForApp(event.source_app)"
+              />
+            </div>
+            
+            <!-- Individual Event Row with Animation -->
+            <div
+              v-else
+              :class="getAnimationClasses(getEventKey(event))"
+              class="transition-all duration-200"
+            >
+              <EventRow
+                :event="event"
+                :gradient-class="getGradientForSession(event.session_id)"
+                :color-class="getColorForSession(event.session_id)"
+                :app-gradient-class="getGradientForApp(event.source_app)"
+                :app-color-class="getColorForApp(event.source_app)"
+                :app-hex-color="getHexColorForApp(event.source_app)"
+              />
+            </div>
+          </template>
+        </div>
       </div>
       
       <div v-if="filteredEvents.length === 0" class="text-center py-12 mobile:py-8 text-[var(--theme-text-tertiary)] animate-fadeIn">
@@ -47,8 +70,13 @@
 import { ref, computed, watch, nextTick, onMounted } from 'vue';
 import { Activity } from 'lucide-vue-next';
 import type { HookEvent, FilterOptions } from '../types';
+import type { GroupedEvent } from '../types/grouping';
 import EventRow from './EventRow.vue';
+import GroupedEventCard from './GroupedEventCard.vue';
 import { useEventColors } from '../composables/useEventColors';
+import { useEventGrouping } from '../composables/useEventGrouping';
+import { useGroupingPreferences } from '../composables/useGroupingPreferences';
+import { useEventAnimations } from '../composables/useEventAnimations';
 import { Select, SelectContent, SelectItem, SelectSeparator, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -71,6 +99,16 @@ const emit = defineEmits<{
 
 const scrollContainer = ref<HTMLElement>();
 const { getGradientForSession, getColorForSession, getGradientForApp, getColorForApp, getHexColorForApp } = useEventColors();
+
+// Enhanced grouping system
+const { groupingPreferences } = useGroupingPreferences();
+const { groupedEvents, groupingStats, getGroupChangeType } = useEventGrouping(
+  computed(() => props.events),
+  groupingPreferences
+);
+
+// Animation system
+const { processEventAnimation, getAnimationClasses } = useEventAnimations();
 
 const projectOf = (e: HookEvent) => (e as any).project || (e as any).payload?.project || e.source_app;
 
@@ -120,113 +158,8 @@ const updateEventTypeFilter = (value: any) => {
 
 onMounted(() => { fetchFilterOptions(); setInterval(fetchFilterOptions, 10000); });
 
-type AnyEvent = HookEvent & { meta?: any };
-
-type GroupMeta = {
-  group: 'aggregate';
-  count: number;
-  timeRange: [number, number];
-  key: string;
-  tool?: string;
-  chips: string[];
-  children: HookEvent[];
-};
-
-const summarizeChip = (e: HookEvent): string | null => {
-  const p: any = (e as any).payload || {};
-  const fp = p.tool_input?.file_path as string | undefined;
-  if (fp) return String(fp).split('/').pop() as string;
-  const cmd = p.tool_input?.command as string | undefined;
-  if (cmd) return String(cmd).slice(0, 40);
-  const s = (e as any).summary as string | undefined;
-  if (s) {
-    const m = s.match(/^read\s+(.+)$/i);
-    if (m) return m[1].trim();
-    return s.slice(0, 40);
-  }
-  return null;
-};
-
-const groupKey = (e: HookEvent): string => {
-  const tool = (e as any).payload?.tool_name || '';
-  return [e.session_id, e.source_app, e.hook_event_type, tool].join('|');
-};
-
-const WINDOW_MS = 3000;
-
-const groupedEvents = computed<AnyEvent[]>(() => {
-  const out: AnyEvent[] = [];
-  let open: { [key: string]: { start: number; last: number; key: string; base: HookEvent; chips: string[]; children: HookEvent[]; tool?: string } } = {};
-  const push = (g: typeof open[string]) => {
-    const aggChips: string[] = [];
-    for (const child of g.children) {
-      const chip = summarizeChip(child);
-      if (chip) aggChips.push(chip);
-    }
-    const chips = Array.from(new Set(aggChips));
-
-    const evt: AnyEvent = {
-      ...(g.base as any),
-      meta: {
-        group: 'aggregate',
-        count: g.children.length,
-        timeRange: [g.start, g.last],
-        key: g.key,
-        tool: g.tool,
-        chips,
-        children: g.children
-      } satisfies GroupMeta
-    };
-    out.push(evt);
-  };
-
-  const events = [...props.events];
-  console.log('[EventTimeline] Processing events for grouping:', {
-    totalEvents: events.length,
-    eventsWithSummary: events.filter(e => e.summary).length,
-    sampleEventsWithSummary: events.filter(e => e.summary).slice(0, 3).map(e => ({
-      id: e.id,
-      summary: e.summary,
-      hook_event_type: e.hook_event_type
-    }))
-  });
-  
-  for (const e of events) {
-    const ts = e.timestamp || 0;
-    const k = groupKey(e);
-    const tool = (e as any).payload?.tool_name;
-    const chip = summarizeChip(e);
-    const g = open[k];
-    if (g && ts - g.last <= WINDOW_MS) {
-      g.last = ts;
-      g.children.push(e);
-      if (chip) g.chips.push(chip);
-    } else {
-      if (g) {
-        push(g);
-        delete open[k];
-      }
-      open[k] = { start: ts, last: ts, key: k, base: e, chips: chip ? [chip] : [], children: [e], tool };
-    }
-  }
-  Object.values(open).forEach(push);
-  
-  console.log('[EventTimeline] Grouped events result:', {
-    totalGroupedEvents: out.length,
-    groupedEventsWithSummary: out.filter(e => e.summary).length,
-    sampleGroupedEventsWithSummary: out.filter(e => e.summary).slice(0, 3).map(e => ({
-      id: e.id,
-      summary: e.summary,
-      hook_event_type: e.hook_event_type,
-      isGroup: !!e.meta?.group
-    }))
-  });
-  
-  return out;
-});
-
 const filteredEvents = computed(() => {
-  return groupedEvents.value.filter(event => {
+  return groupedEvents.value.filter((event: HookEvent | GroupedEvent) => {
     if (props.selectedProject && projectOf(event) !== props.selectedProject) return false;
     if (props.filters.sessionId && props.filters.sessionId !== '__ALL_SESSIONS__' && event.session_id !== props.filters.sessionId) return false;
     if (props.filters.eventType && props.filters.eventType !== '__ALL_TYPES__' && event.hook_event_type !== props.filters.eventType) return false;
@@ -235,7 +168,11 @@ const filteredEvents = computed(() => {
 });
 
 const filteredEventsSorted = computed(() => {
-  return [...filteredEvents.value].sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+  return [...filteredEvents.value].sort((a, b) => {
+    const aTime = ('groupMeta' in a) ? (a as GroupedEvent).groupMeta.timeRange[1] : (a.timestamp || 0);
+    const bTime = ('groupMeta' in b) ? (b as GroupedEvent).groupMeta.timeRange[1] : (b.timestamp || 0);
+    return bTime - aTime;
+  });
 });
 
 const scrollToTop = () => {
@@ -258,8 +195,35 @@ watch(() => props.events.length, async () => {
   if (props.stickToBottom) { await nextTick(); scrollToTop(); }
 });
 
+// Process animations when grouped events change
+watch(groupedEvents, async (newGrouped, oldGrouped) => {
+  console.log('[EventTimeline] Grouped events changed:', {
+    newCount: newGrouped.length,
+    oldCount: oldGrouped?.length || 0,
+    groupedCount: newGrouped.filter(e => 'groupMeta' in e).length,
+    individualCount: newGrouped.filter(e => !('groupMeta' in e)).length
+  })
+  
+  // Process animations for each event
+  for (const event of newGrouped) {
+    const eventId = getEventKey(event)
+    let changeType: 'new' | 'updated' | 'unchanged' = 'new'
+    
+    if ('groupMeta' in event) {
+      // For grouped events, check the group change type
+      changeType = getGroupChangeType(event.id)
+    } else {
+      // For individual events, check if we've seen this ID before
+      const existsInOld = oldGrouped?.some(e => getEventKey(e) === eventId)
+      changeType = existsInOld ? 'unchanged' : 'new'
+    }
+    
+    await processEventAnimation(eventId, changeType)
+  }
+}, { deep: true, immediate: true })
+
 watch(() => props.events, (newEvents) => {
-  console.log('[EventTimeline] Events prop changed:', {
+  console.log('[EventTimeline] Raw events prop changed:', {
     count: newEvents.length,
     latestEvents: newEvents.slice(0, 3).map(e => ({
       id: e.id,
@@ -271,6 +235,23 @@ watch(() => props.events, (newEvents) => {
     }))
   });
 }, { deep: true });
+
+// Helper function to get unique key for events
+const getEventKey = (event: HookEvent | GroupedEvent) => {
+  if ('groupMeta' in event) {
+    // Use a stable key for grouped events based on the first child event ID
+    const groupedEvent = event as GroupedEvent
+    const firstChildId = groupedEvent.groupMeta.children[0]?.id || 'unknown'
+    return `group-${firstChildId}-${groupedEvent.groupMeta.children.length}`
+  }
+  // For individual events, use just the ID which should be stable
+  return `event-${event.id}`
+}
+
+// Expose grouping stats for debugging
+defineExpose({
+  groupingStats
+});
 
 watch(() => props.stickToBottom, (shouldStick) => { if (shouldStick) { scrollToTop(); } });
 </script>
@@ -296,5 +277,81 @@ watch(() => props.stickToBottom, (shouldStick) => { if (shouldStick) { scrollToT
 .event-leave-to {
   opacity: 0;
   transform: translateX(20px) scale(0.95);
+}
+
+/* Enhanced Animation Classes */
+@keyframes fade-in {
+  from {
+    opacity: 0;
+    transform: translateX(-20px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0) scale(1);
+  }
+}
+
+@keyframes slide-up {
+  from {
+    transform: translateY(10px);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+
+@keyframes pulse-gentle {
+  0%, 100% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 var(--theme-primary, #3b82f6);
+  }
+  50% {
+    transform: scale(1.02);
+    box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.2);
+  }
+}
+
+@keyframes pulse-brief {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.05);
+  }
+}
+
+@keyframes highlight {
+  0% {
+    background-color: transparent;
+    border-left-color: var(--theme-border-primary);
+  }
+  50% {
+    background-color: rgba(59, 130, 246, 0.1);
+    border-left-color: var(--theme-primary, #3b82f6);
+  }
+  100% {
+    background-color: transparent;
+    border-left-color: var(--theme-border-primary);
+  }
+}
+
+.animate-fade-in {
+  animation: fade-in 0.4s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+.animate-slide-up {
+  animation: slide-up 0.3s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+.animate-pulse-gentle {
+  animation: pulse-gentle 0.8s ease-in-out forwards;
+}
+
+.animate-pulse-brief {
+  animation: pulse-brief 0.6s ease-in-out forwards;
+}
+
+.animate-highlight {
+  animation: highlight 0.8s ease-in-out forwards;
 }
 </style>

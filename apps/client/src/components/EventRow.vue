@@ -9,10 +9,10 @@
       <div class="pl-4 pr-4 py-2.5 ml-2">
         <div class="flex items-center justify-between mb-1.5">
           <div class="flex items-center gap-2.5 min-w-0">
-            <span class="text-[13px] font-semibold tracking-tight text-[var(--theme-text-primary)] truncate max-w-[40%]" title="Project">
+            <span class="text-[13px] font-semibold tracking-tight text-[var(--theme-text-primary)]" title="Project">
               {{ event.source_app }}
             </span>
-            <Badge variant="outline" class="font-mono text-[10px] px-1.5 py-0.5 rounded-sm" title="Session">
+            <Badge variant="outline" class="font-mono text-[10px] px-1.5 py-0.5 rounded-sm shrink-0" title="Session">
               {{ sessionIdShort }}
             </Badge>
             <Badge v-if="agentName" variant="soft" class="text-[11px] px-2 py-0.5 truncate max-w-[30%]" title="Agent">

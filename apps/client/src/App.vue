@@ -78,6 +78,62 @@
                 </SelectItem>
               </SelectContent>
             </Select>
+            
+            <!-- View Mode Toggle -->
+            <div class="flex items-center border border-[var(--theme-border-primary)]/40 rounded-md bg-[var(--theme-bg-primary)] overflow-hidden">
+              <Button
+                variant="ghost"
+                size="sm"
+                @click="setViewMode('unified')"
+                :class="[
+                  'h-8 px-3 rounded-none border-0 text-xs',
+                  viewMode === 'unified' 
+                    ? 'bg-primary/10 text-primary' 
+                    : 'text-[var(--theme-text-secondary)] hover:bg-[var(--theme-bg-tertiary)]'
+                ]"
+              >
+                <ListIcon class="w-3 h-3 mr-1" />
+                Timeline
+              </Button>
+              <div class="w-px h-4 bg-[var(--theme-border-primary)]/40"></div>
+              <Button
+                variant="ghost"
+                size="sm"
+                @click="setViewMode('swimlanes')"
+                :class="[
+                  'h-8 px-3 rounded-none border-0 text-xs',
+                  viewMode === 'swimlanes' 
+                    ? 'bg-primary/10 text-primary' 
+                    : 'text-[var(--theme-text-secondary)] hover:bg-[var(--theme-bg-tertiary)]'
+                ]"
+              >
+                <Layers class="w-3 h-3 mr-1" />
+                Lanes
+              </Button>
+            </div>
+            
+            <!-- Grouping Controls Toggle -->
+            <DropdownMenu>
+              <DropdownMenuTrigger as-child>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  class="h-8 text-xs gap-1"
+                  :class="[
+                    groupingPreferences.enabled && 'bg-primary/10 border-primary/40 text-primary'
+                  ]"
+                >
+                  <SettingsIcon class="w-3 h-3" />
+                  Grouping
+                  <Badge v-if="groupingStats && groupingStats.reductionPercentage > 0" variant="secondary" class="ml-1 text-[10px] px-1">
+                    -{{ groupingStats.reductionPercentage }}%
+                  </Badge>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" class="w-80 max-h-96 overflow-y-auto">
+                <GroupingControls :grouping-stats="groupingStats" />
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
           <DropdownMenu>
             <DropdownMenuTrigger as-child>
@@ -136,7 +192,7 @@
               </div>
             </div>
           </Card>
-          <Card class="p-0 overflow-hidden transition-all duration-200 hover:shadow-lg">
+          <Card class="p-0 overflow-visible transition-all duration-200 hover:shadow-lg">
             <EventHeaderPulse :events="fullyFilteredEvents" :filters="filters as any" :timeline-scroll="timelineScrollPosition" />
           </Card>
         </div>
@@ -144,7 +200,27 @@
 
       <div class="min-h-0 min-w-0">
         <Card class="h-full rounded-none">
-          <EventTimeline :events="events" :filters="filters as any" @update:filters="filters = $event" :selected-project="selectedProject" v-model:stick-to-bottom="stickToBottom" @scroll-sync="handleTimelineScroll" />
+          <!-- Unified Timeline View -->
+          <EventTimeline 
+            v-if="viewMode === 'unified'"
+            ref="eventTimelineRef"
+            :events="events" 
+            :filters="filters as any" 
+            @update:filters="filters = $event" 
+            :selected-project="selectedProject" 
+            v-model:stick-to-bottom="stickToBottom" 
+            @scroll-sync="handleTimelineScroll" 
+          />
+          
+          <!-- Swimlanes View -->
+          <EventSwimlanes
+            v-else
+            :events="events"
+            :filters="filters as any"
+            :selected-project="selectedProject"
+            v-model:stick-to-bottom="stickToBottom"
+            @scroll-sync="handleTimelineScroll"
+          />
         </Card>
       </div>
     </main>
@@ -164,17 +240,20 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted } from 'vue';
+import { ref, computed, watch, onMounted, onUnmounted } from 'vue';
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
 import { Select, SelectContent, SelectItem, SelectSeparator, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Badge } from '@/components/ui/badge'
-import { AlertCircle, Sun, Moon, Monitor } from 'lucide-vue-next';
+import { AlertCircle, Sun, Moon, Monitor, ListIcon, Layers, SettingsIcon } from 'lucide-vue-next';
 import { useWebSocket } from './composables/useWebSocket';
 import { useThemes } from './composables/useThemes';
+import { useGroupingPreferences } from './composables/useGroupingPreferences';
 import EventTimeline from './components/EventTimeline.vue';
+import EventSwimlanes from './components/EventSwimlanes.vue';
+import GroupingControls from './components/GroupingControls.vue';
 import StickScrollButton from './components/StickScrollButton.vue';
 import EventHeaderPulse from './components/EventHeaderPulse.vue';
 import ThemeManager from './components/ThemeManager.vue';
@@ -182,6 +261,7 @@ import ProjectFilterCards from './components/ProjectFilterCards.vue';
 
 const { events, error } = useWebSocket('ws://localhost:4000/stream');
 const themes = useThemes();
+const { groupingPreferences, swimlanePreferences } = useGroupingPreferences();
 
 const filters = ref({ sessionId: '__ALL_SESSIONS__', eventType: '__ALL_TYPES__' });
 const stickToBottom = ref(true);
@@ -189,6 +269,13 @@ const showThemeManager = ref(false);
 const showThemeMenu = ref(false);
 const selectedProject = ref<string>('');
 const localSelectedProject = ref<string>('__ALL__');
+const viewMode = ref<'unified' | 'swimlanes'>('unified');
+const eventTimelineRef = ref();
+
+// Reactive grouping stats from EventTimeline
+const groupingStats = computed(() => {
+  return eventTimelineRef.value?.groupingStats || null;
+});
 
 const uniqueSessionsCount = computed(() => {
   const sessions = new Set(events.value.map(e => e.session_id));
@@ -273,10 +360,28 @@ const toggleAutoTheme = () => {
   else themes.enableAutoTheme();
 };
 
+const setViewMode = (mode: 'unified' | 'swimlanes') => {
+  viewMode.value = mode;
+  
+  // Auto-enable swimlanes preference when switching to swimlanes view
+  if (mode === 'swimlanes' && !swimlanePreferences.value.enabled) {
+    swimlanePreferences.value.enabled = true;
+  }
+};
+
 const handleClickOutside = (event: MouseEvent) => {
   const target = event.target as HTMLElement;
   if (!target.closest('.relative')) showThemeMenu.value = false;
 };
+
+// Sync view mode with swimlane preferences
+watch(() => swimlanePreferences.value.enabled, (enabled) => {
+  if (enabled && viewMode.value === 'unified') {
+    viewMode.value = 'swimlanes';
+  } else if (!enabled && viewMode.value === 'swimlanes') {
+    viewMode.value = 'unified';
+  }
+});
 
 onMounted(() => document.addEventListener('click', handleClickOutside));
 onUnmounted(() => document.removeEventListener('click', handleClickOutside));
