@@ -121,6 +121,30 @@
         ]
       }
     ],
+    "PostToolUse": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "uv run .claude/hooks/post_tool_use.py"
+          },
+          {
+            "type": "command",
+            "command": "uv run .claude/hooks/send_event.py --source-app cc-hook-client --event-type PostToolUse --summarize"
+          }
+        ]
+      },
+      {
+        "matcher": "Edit|MultiEdit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "cd apps/client && if echo \"$1\" | grep -qE '\\.(vue|ts|tsx|js|jsx)$' && [ -f \"$1\" ]; then bun run vue-tsc --noEmit --skipLibCheck; fi"
+          }
+        ]
+      }
+    ],
     "UserPromptSubmit": [
       {
         "hooks": [

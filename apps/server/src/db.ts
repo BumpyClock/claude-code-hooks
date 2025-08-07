@@ -162,6 +162,57 @@ export function getRecentEvents(limit: number = 100): HookEvent[] {
   })).reverse();
 }
 
+export function getHistoricalEvents(beforeTimestamp: number, limit: number = 50): {
+  events: HookEvent[];
+  has_more: boolean;
+  earliest_timestamp: string | null;
+} {
+  const stmt = db.prepare(`
+    SELECT id, source_app, session_id, hook_event_type, payload, chat, summary, timestamp
+    FROM events
+    WHERE timestamp < ?
+    ORDER BY timestamp DESC
+    LIMIT ?
+  `);
+  
+  const rows = stmt.all(beforeTimestamp, limit) as any[];
+  
+  const events = rows.map(row => ({
+    id: row.id,
+    source_app: row.source_app,
+    session_id: row.session_id,
+    hook_event_type: row.hook_event_type,
+    payload: JSON.parse(row.payload),
+    chat: row.chat ? JSON.parse(row.chat) : undefined,
+    summary: row.summary || undefined,
+    timestamp: row.timestamp
+  })).reverse();
+  
+  // Check if there are more events beyond this batch
+  let has_more = false;
+  let earliest_timestamp: string | null = null;
+  
+  if (events.length > 0) {
+    const earliestEvent = events[0]; // First event after reverse (oldest in this batch)
+    earliest_timestamp = new Date(earliestEvent.timestamp).toISOString();
+    
+    // Check if there are more events older than the earliest in this batch
+    const checkMoreStmt = db.prepare(`
+      SELECT COUNT(*) as count
+      FROM events
+      WHERE timestamp < ?
+    `);
+    const result = checkMoreStmt.get(earliestEvent.timestamp) as { count: number };
+    has_more = result.count > 0;
+  }
+  
+  return {
+    events,
+    has_more,
+    earliest_timestamp
+  };
+}
+
 // Theme database functions
 export function insertTheme(theme: Theme): Theme {
   const stmt = db.prepare(`

@@ -1,4 +1,4 @@
-import { initDatabase, insertEvent, getFilterOptions, getRecentEvents } from './db';
+import { initDatabase, insertEvent, getFilterOptions, getRecentEvents, getHistoricalEvents } from './db';
 import type { HookEvent } from './types';
 import { 
   createTheme, 
@@ -91,6 +91,40 @@ const server = Bun.serve({
       return new Response(JSON.stringify(events), {
         headers: { ...headers, 'Content-Type': 'application/json' }
       });
+    }
+    
+    // GET /events/historical - Get historical events with timestamp pagination
+    if (url.pathname === '/events/historical' && req.method === 'GET') {
+      const beforeParam = url.searchParams.get('before');
+      const limit = parseInt(url.searchParams.get('limit') || '50');
+      
+      if (!beforeParam) {
+        return new Response(JSON.stringify({ error: 'Missing required parameter: before (ISO timestamp)' }), {
+          status: 400,
+          headers: { ...headers, 'Content-Type': 'application/json' }
+        });
+      }
+      
+      try {
+        const beforeTimestamp = new Date(beforeParam).getTime();
+        if (isNaN(beforeTimestamp)) {
+          return new Response(JSON.stringify({ error: 'Invalid timestamp format. Use ISO 8601 format.' }), {
+            status: 400,
+            headers: { ...headers, 'Content-Type': 'application/json' }
+          });
+        }
+        
+        const result = getHistoricalEvents(beforeTimestamp, limit);
+        return new Response(JSON.stringify(result), {
+          headers: { ...headers, 'Content-Type': 'application/json' }
+        });
+      } catch (error) {
+        console.error('Error retrieving historical events:', error);
+        return new Response(JSON.stringify({ error: 'Failed to retrieve historical events' }), {
+          status: 500,
+          headers: { ...headers, 'Content-Type': 'application/json' }
+        });
+      }
     }
     
     // Theme API endpoints
@@ -442,7 +476,7 @@ const server = Bun.serve({
       wsClients.add(ws);
       
       // Send recent events on connection
-      const events = getRecentEvents(50);
+      const events = getRecentEvents(200);
       ws.send(JSON.stringify({ type: 'initial', data: events }));
     },
     

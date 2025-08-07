@@ -215,7 +215,6 @@
           <EventTimeline 
             v-if="viewMode === 'unified'"
             ref="eventTimelineRef"
-            :events="events" 
             :filters="filters as any" 
             @update:filters="filters = $event" 
             :selected-project="selectedProject" 

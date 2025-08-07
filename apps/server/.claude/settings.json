@@ -1,0 +1,18 @@
+{
+  "env": {
+      "CLAUDE_BASH_MAINTAIN_PROJECT_WORKING_DIR": "true"
+  },
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Edit|MultiEdit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "cd apps/server && if echo \"$1\" | grep -qE '\\.(ts|js)$' && [ -f \"$1\" ]; then bun run typecheck; fi"
+          }
+        ]
+      }
+    ]
+  }
+}

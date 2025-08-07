@@ -50,6 +50,14 @@
         </div>
       </div>
       
+      <!-- Historical Loading Indicator -->
+      <div v-if="isLoadingHistorical" class="flex justify-center py-4 text-[var(--theme-text-tertiary)]">
+        <div class="flex items-center gap-2">
+          <div class="w-4 h-4 border-2 border-[var(--theme-primary)] border-t-transparent rounded-full animate-spin"></div>
+          <span class="text-sm">Loading historical events...</span>
+        </div>
+      </div>
+      
       <div v-if="filteredEvents.length === 0" class="text-center py-12 mobile:py-8 text-[var(--theme-text-tertiary)] animate-fadeIn">
         <div class="w-20 h-20 mx-auto mb-6 rounded-3xl bg-gradient-to-br from-[var(--theme-bg-tertiary)] via-[var(--theme-bg-quaternary)] to-[var(--theme-bg-tertiary)] flex items-center justify-center shadow-inner border border-[var(--theme-border-primary)]/20">
           <div class="relative">
@@ -82,12 +90,12 @@ import { useEventColors } from '../composables/useEventColors';
 import { useEventGrouping } from '../composables/useEventGrouping';
 import { useGroupingPreferences } from '../composables/useGroupingPreferences';
 import { useEventAnimations } from '../composables/useEventAnimations';
+import { useWebSocket } from '../composables/useWebSocket';
 import { Select, SelectContent, SelectItem, SelectSeparator, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 
 const props = defineProps<{
-  events: HookEvent[];
   filters: {
     sessionId: string;
     eventType: string;
@@ -106,10 +114,13 @@ const scrollContainer = ref<HTMLElement>();
 const scrollTop = ref(0);
 const { getGradientForSession, getColorForSession, getGradientForApp, getColorForApp, getHexColorForApp } = useEventColors();
 
+// WebSocket connection for combined events
+const { allEvents, isLoadingHistorical, handleScroll: infiniteScrollHandler } = useWebSocket('ws://localhost:4000/stream');
+
 // Enhanced grouping system
 const { groupingPreferences } = useGroupingPreferences();
 const { groupedEvents, groupingStats, getGroupChangeType } = useEventGrouping(
-  computed(() => props.events),
+  allEvents,
   groupingPreferences
 );
 
@@ -196,9 +207,12 @@ const handleScroll = () => {
   
   // Emit scroll position for activity timeline synchronization
   emit('scroll-sync', currentScrollTop);
+  
+  // Handle infinite scroll for historical data loading
+  infiniteScrollHandler(scrollContainer.value);
 };
 
-watch(() => props.events.length, async () => {
+watch(() => allEvents.value.length, async () => {
   if (props.stickToBottom) { await nextTick(); scrollToTop(); }
 });
 
@@ -229,10 +243,10 @@ watch(groupedEvents, async (newGrouped, oldGrouped) => {
   }
 }, { deep: true, immediate: true })
 
-watch(() => props.events, (newEvents) => {
-  console.log('[EventTimeline] Raw events prop changed:', {
+watch(allEvents, (newEvents) => {
+  console.log('[EventTimeline] Combined events changed:', {
     count: newEvents.length,
-    latestEvents: newEvents.slice(0, 3).map(e => ({
+    latestEvents: newEvents.slice(-3).map(e => ({
       id: e.id,
       timestamp: e.timestamp,
       hook_event_type: e.hook_event_type,
