@@ -1,0 +1,46 @@
+version: '3.8'
+
+services:
+  observability:
+    build: .
+    container_name: claude-observability
+    ports:
+      - "4000:4000"   # API server
+      - "5173:5173"   # Client UI
+    environment:
+      # Required - Set your actual API key
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-your_anthropic_api_key_here}
+      
+      # Optional - Customize as needed
+      - ENGINEER_NAME=${ENGINEER_NAME:-Developer}
+      - GEMINI_API_KEY=${GEMINI_API_KEY:-}
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-}
+      - ELEVEN_API_KEY=${ELEVEN_API_KEY:-}
+      
+      # LLM Provider for Summaries (anthropic/openai/claude/gpt)
+      - SUMMARY_LLM_PROVIDER=${SUMMARY_LLM_PROVIDER:-anthropic}
+      
+      # System configuration
+      - NODE_ENV=production
+      - LOG_LEVEL=${LOG_LEVEL:-info}
+      - MAX_EVENT_HISTORY=${MAX_EVENT_HISTORY:-1000}
+      
+    volumes:
+      # Persist database across container restarts
+      - observability-data:/app/data
+      
+      # Optional: Mount your project's .claude directory for hook integration
+      # - /path/to/your/project/.claude:/app/hooks:ro
+      
+    restart: unless-stopped
+    
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:4000/events/filter-options"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+volumes:
+  observability-data:
+    driver: local

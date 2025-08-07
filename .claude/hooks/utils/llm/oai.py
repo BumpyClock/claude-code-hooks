@@ -54,11 +54,14 @@ def prompt_llm(prompt_text):
             break
 
     api_key = os.getenv("OPENAI_API_KEY")
+    base_url = os.getenv("OPENAI_BASE_URL", "https://api.openai.com/v1")
+    model = os.getenv("OPENAI_MODEL", "gpt-4o-mini")
     
     # Debug logging
     try:
         with open(".claude/logs/summarizer.log", "a") as f:
             f.write(f"[DEBUG] Environment loaded: {env_loaded}, API key found: {bool(api_key)}\n")
+            f.write(f"[DEBUG] Using base URL: {base_url}, model: {model}\n")
             if not api_key:
                 f.write(f"[DEBUG] Current working directory: {current_dir}\n")
                 f.write(f"[DEBUG] Checked paths: {possible_env_paths}\n")
@@ -71,10 +74,10 @@ def prompt_llm(prompt_text):
     try:
         from openai import OpenAI
 
-        client = OpenAI(api_key=api_key)
+        client = OpenAI(api_key=api_key, base_url=base_url)
 
         response = client.chat.completions.create(
-            model="gpt-4o-mini",  # Using a known valid model
+            model=model,
             messages=[{"role": "user", "content": prompt_text}],
             max_tokens=100,
             temperature=0.7,

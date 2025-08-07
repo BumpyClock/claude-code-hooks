@@ -1,0 +1,86 @@
+# Dockerfile specific ignores
+.dockerignore
+Dockerfile*
+docker-compose*
+
+# Development files
+*.log
+*.local
+.env.local
+.env.development
+.env.test
+.env.production
+
+# Node modules (will be installed in container)
+node_modules/
+*/node_modules/
+**/node_modules/
+
+# Build artifacts
+apps/client/dist/
+apps/client/.vite/
+apps/server/dist/
+
+# Database files
+*.db
+*.db-shm
+*.db-wal
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Development tools
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Git
+.git/
+.gitignore
+
+# CI/CD
+.github/
+.gitlab-ci.yml
+
+# Documentation
+*.md
+docs/
+images/
+
+# Scripts (keep only production ones)
+scripts/
+install.sh
+quick-start.sh
+setup-new-project.sh
+
+# Test files
+**/*.test.*
+**/__tests__/
+**/test/
+coverage/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache/
+.coverage
+
+# UV Python package manager
+.venv/
+venv/

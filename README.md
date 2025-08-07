@@ -16,27 +16,65 @@ Claude Agents → Hook Scripts → HTTP POST → Bun Server → SQLite → WebSo
 
 ![Agent Data Flow Animation](images/AgentDataFlowV2.gif)
 
-## 📋 Setup Requirements
+## 📋 Requirements
 
-Before getting started, ensure you have the following installed:
+### Docker Setup (Recommended)
+- **[Docker](https://docs.docker.com/get-docker/)** & **[Docker Compose](https://docs.docker.com/compose/install/)**
+- **Anthropic API Key** - Get from [console.anthropic.com](https://console.anthropic.com/)
 
+### Local Development Setup
 - **[Claude Code](https://docs.anthropic.com/en/docs/claude-code)** - Anthropic's official CLI for Claude
-- **[Astral uv](https://docs.astral.sh/uv/)** - Fast Python package manager (required for hook scripts)
-- **[Bun](https://bun.sh/)**, **npm**, or **yarn** - For running the server and client
+- **[Astral uv](https://docs.astral.sh/uv/)** - Fast Python package manager (auto-installed by `install.sh`)
+- **[Bun](https://bun.sh/)** - JavaScript runtime (auto-installed by `install.sh`)
 - **Anthropic API Key** - Set as `ANTHROPIC_API_KEY` environment variable
-- **OpenAI API Key** (optional) - For multi-model support with just-prompt MCP tool
+- **OpenAI API Key** (optional) - For multi-model support
 - **ElevenLabs API Key** (optional) - For audio features
 
-### Configure .claude Directory
+## 🔧 Environment Configuration
 
-To setup observability in your repo,we need to copy the .claude directory to your project root.
+### Docker Environment Setup
 
-To integrate the observability hooks into your projects:
-
-1. **Copy the entire `.claude` directory to your project root:**
+1. **Create a `.env` file** (copy from `.env.sample`):
    ```bash
-   cp -R .claude /path/to/your/project/
+   cp .env.sample .env
    ```
+
+2. **Set your API key in `.env`:**
+   ```env
+   ANTHROPIC_API_KEY=your_actual_anthropic_api_key_here
+   ENGINEER_NAME=Your Name Here
+   # Optional keys...
+   ```
+
+3. **Start with docker-compose:**
+   ```bash
+   docker-compose up -d
+   ```
+
+### Configure .claude Directory for Your Projects
+
+To integrate observability hooks into your existing projects:
+
+#### Automated Hook Integration
+
+**Unix/macOS/Linux:**
+```bash
+./setup/extract-hooks.sh /path/to/your/project "Project Name"
+```
+
+**Windows:**
+```powershell
+.\setup\extract-hooks.ps1 -TargetPath "C:\path\to\your\project" -ProjectName "Project Name"
+```
+
+#### Manual Hook Setup
+```bash
+# Copy hooks from Docker container
+docker cp claude-observability:/app/hooks ./your-project/.claude
+
+# Or copy from local installation
+cp -R .claude /path/to/your/project/
+```
 
 2. **Update the `settings.json` configuration:**
    
@@ -100,21 +138,50 @@ Now your project will send events to the observability system whenever Claude Co
 
 ## 🚀 Quick Start
 
-You can quickly view how this works by running this repositories .claude setup.
+### Universal One-Click Start
+
+**Works on macOS, Linux, and Windows:**
+
+**Unix/macOS/Linux:**
+```bash
+./start.sh
+```
+
+**Windows:**
+```powershell
+.\start.ps1
+```
+
+The script automatically:
+- Detects Docker vs local environment
+- Sets up configuration
+- Installs dependencies if needed
+- Starts the system
+- Opens **http://localhost:5173**
+
+### Manual Setup Options
+
+#### 🐳 Docker (Recommended)
 
 ```bash
-# 1. Start both server and client
+# Set your API key
+export ANTHROPIC_API_KEY="your-api-key-here"
+
+# Start everything
+docker-compose up -d
+
+# Extract hooks to monitor your projects
+./setup/extract-hooks.sh /path/to/your/project "Project Name"
+```
+
+#### 🛠️ Local Development
+
+```bash
+# Full installation
+./setup/install.sh
+
+# Start system
 ./scripts/start-system.sh
-
-# 2. Open http://localhost:5173 in your browser
-
-# 3. Open Claude Code and run the following command:
-Run git ls-files to understand the codebase.
-
-# 4. Watch events stream in the client
-
-# 5. Copy the .claude folder to other projects you want to emit events from.
-cp -R .claude <directory of your codebase you want to emit events from>
 ```
 
 ## 📁 Project Structure
@@ -307,41 +374,63 @@ Already integrated! Hooks run both validation and observability:
 
 ## 🧪 Testing
 
+### Docker Testing
 ```bash
-# System validation
-./scripts/test-system.sh
+# Check container health
+docker ps
+docker logs claude-observability
+
+# Test API endpoint
+curl http://localhost:4000/events/filter-options
 
 # Manual event test
 curl -X POST http://localhost:4000/events \
   -H "Content-Type: application/json" \
   -d '{
     "source_app": "test",
-    "session_id": "test-123",
+    "session_id": "test-123", 
     "hook_event_type": "PreToolUse",
     "payload": {"tool_name": "Bash", "tool_input": {"command": "ls"}}
   }'
+```
+
+### Local Testing
+```bash
+# System validation
+./scripts/test-system.sh
+
+# Manual event test (same as above)
 ```
 
 ## ⚙️ Configuration
 
 ### Environment Variables
 
-Copy `.env.sample` to `.env` in the project root and fill in your API keys:
+**Docker (`.env` file in project root):**
+```env
+ANTHROPIC_API_KEY=your_actual_key_here
+ENGINEER_NAME=Your Name
+GEMINI_API_KEY=optional
+OPENAI_API_KEY=optional
+ELEVEN_API_KEY=optional
 
-**Application Root** (`.env` file):
-- `ANTHROPIC_API_KEY` – Anthropic Claude API key (required)
-- `ENGINEER_NAME` – Your name (for logging/identification)
-- `GEMINI_API_KEY` – Google Gemini API key (optional)
-- `OPENAI_API_KEY` – OpenAI API key (optional)
-- `ELEVEN_API_KEY` – ElevenLabs API key (optional)
+# LLM Provider for Event Summaries
+SUMMARY_LLM_PROVIDER=anthropic  # or "openai", "claude", "gpt"
 
-**Client** (`.env` file in `apps/client/.env`):
-- `VITE_MAX_EVENTS_TO_DISPLAY=100` – Maximum events to show (removes oldest when exceeded)
+# System settings
+LOG_LEVEL=info
+MAX_EVENT_HISTORY=1000
+```
 
-### Server Ports
+**Local Development:**
+- Root: Copy `.env.sample` to `.env` and fill in values
+- Client: `apps/client/.env` - `VITE_MAX_EVENTS_TO_DISPLAY=100`
 
-- Server: `4000` (HTTP/WebSocket)
-- Client: `5173` (Vite dev server)
+### Ports & Services
+
+- **Web UI**: `5173` (Main dashboard)
+- **API Server**: `4000` (HTTP/WebSocket)
+- **Database**: SQLite (persistent volume in Docker)
 
 ## 🛡️ Security Features
 
@@ -359,6 +448,30 @@ Copy `.env.sample` to `.env` in the project root and fill in your API keys:
 
 ## 🔧 Troubleshooting
 
+### Quick Fixes
+
+**Ports in use:**
+```bash
+./scripts/reset-system.sh    # Unix
+.\scripts\reset-system.ps1   # Windows
+```
+
+**Docker issues:**
+```bash
+docker-compose down && docker-compose up -d
+```
+
+**Hook problems:**
+- Check `.claude/logs/summarizer.log` for LLM issues
+- Verify API keys in `.env`
+- Use `SUMMARY_LLM_PROVIDER=openai` if Anthropic fails
+
+### Cross-Platform Notes
+
+- **Windows**: Use PowerShell `.ps1` scripts
+- **macOS/Linux**: Use Bash `.sh` scripts  
+- **Universal**: `start.sh` / `start.ps1` work everywhere
+
 ### Hook Scripts Not Working
 
 If your hook scripts aren't executing properly, it might be due to relative paths in your `.claude/settings.json`. Claude Code documentation recommends using absolute paths for command scripts.
@@ -369,14 +482,6 @@ If your hook scripts aren't executing properly, it might be due to relative path
 # In Claude Code, simply run:
 /convert_paths_absolute
 ```
-
-This command will:
-- Find all relative paths in your hook command scripts
-- Convert them to absolute paths based on your current working directory
-- Create a backup of your original settings.json
-- Show you exactly what changes were made
-
-This ensures your hooks work correctly regardless of where Claude Code is executed from.
 
 ## Master AI Coding
 > And prepare for Agentic Engineering
