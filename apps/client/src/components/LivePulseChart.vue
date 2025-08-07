@@ -26,10 +26,9 @@
         </button>
       </div>
     </div>
-    <div class="relative transition-transform will-change-transform overflow-visible"
+    <div class="relative transition-transform will-change-transform overflow-hidden"
          :style="{ 
-           transform: `translate3d(-${(timelineScroll || 0) * 0.05}px, 0, 0)`,
-           overflow: 'visible'
+           transform: `translate3d(-${(timelineScroll || 0) * 0.05}px, 0, 0)`
          }"
     >
       <LineChart
@@ -44,9 +43,9 @@
         :show-y-axis="false"
         :show-grid-line="false"
         :curve-type="CurveType.MonotoneX"
-        :margin="{ left: 20, right: 20, top: 35, bottom: 35 }"
+        :margin="{ left: 10, right: 10, top: 20, bottom: 20 }"
         :custom-tooltip="CustomChartTooltip"
-        class="h-[160px] w-full"
+        class="h-[140px] w-full overflow-hidden"
       >
         <template #default>
           <div />

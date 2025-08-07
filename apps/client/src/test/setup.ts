@@ -31,4 +31,7 @@ Object.defineProperty(navigator, 'clipboard', {
 // Clean up before each test
 beforeEach(() => {
   document.body.innerHTML = ''
+  
+  // Clear localStorage
+  window.localStorage.clear()
 })

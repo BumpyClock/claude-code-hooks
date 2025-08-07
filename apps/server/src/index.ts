@@ -10,6 +10,7 @@ import {
   importTheme,
   getThemeStats 
 } from './theme';
+import path from 'path';
 
 // Initialize database
 initDatabase();
@@ -266,6 +267,159 @@ const server = Bun.serve({
       return new Response(JSON.stringify(result), {
         headers: { ...headers, 'Content-Type': 'application/json' }
       });
+    }
+    
+    // POST /api/install-hooks - Install hooks into a project
+    if (url.pathname === '/api/install-hooks' && req.method === 'POST') {
+      try {
+        const body = await req.json() as { targetPath?: string; displayName?: string; serverUrl?: string };
+        const { targetPath, displayName, serverUrl } = body;
+        
+        // Validate required fields
+        if (!targetPath || !displayName || !serverUrl) {
+          return new Response(JSON.stringify({ 
+            success: false, 
+            error: 'Missing required fields: targetPath, displayName, and serverUrl are required' 
+          }), {
+            status: 400,
+            headers: { ...headers, 'Content-Type': 'application/json' }
+          });
+        }
+        
+        // Generate sourceApp slug from displayName
+        const sourceApp = `project-${displayName.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '')}`;
+        
+        // Validate targetPath exists and is writable
+        // Since Bun.file is for files, we need to check directory existence differently
+        try {
+          const testFile = Bun.file(path.join(targetPath, '.test'));
+          // Try to write a test file to check if directory exists and is writable
+          await Bun.write(testFile, '');
+          // Clean up test file
+          try {
+            const fs = await import('fs').then(m => m.promises);
+            await fs.unlink(path.join(targetPath, '.test'));
+          } catch {
+            // Ignore cleanup errors
+          }
+        } catch (error) {
+          return new Response(JSON.stringify({ 
+            success: false, 
+            error: `Target path does not exist or is not accessible: ${targetPath}` 
+          }), {
+            status: 400,
+            headers: { ...headers, 'Content-Type': 'application/json' }
+          });
+        }
+        
+        // Source and target directories
+        const sourceHooksDir = '/Users/adityasharma/Projects/claude-code-hooks/.claude/hooks';
+        const targetClaudeDir = path.join(targetPath, '.claude');
+        const targetHooksDir = path.join(targetClaudeDir, 'hooks');
+        
+        // Create directories using Bun's fs compatibility layer
+        const fs = await import('fs').then(m => m.promises);
+        await fs.mkdir(targetClaudeDir, { recursive: true });
+        await fs.mkdir(targetHooksDir, { recursive: true });
+        
+        // Track installed files
+        const installedFiles: string[] = [];
+        
+        // Recursive function to copy files using Bun APIs
+        async function copyDirectory(source: string, target: string, basePath: string = '') {
+          const entries = await fs.readdir(source, { withFileTypes: true });
+          
+          for (const entry of entries) {
+            const sourcePath = path.join(source, entry.name);
+            const targetPath = path.join(target, entry.name);
+            const relativePath = basePath ? path.join(basePath, entry.name) : entry.name;
+            
+            if (entry.isDirectory()) {
+              await fs.mkdir(targetPath, { recursive: true });
+              await copyDirectory(sourcePath, targetPath, relativePath);
+            } else if (entry.isFile()) {
+              // Read the source file using Bun.file
+              const sourceFile = Bun.file(sourcePath);
+              const content = await sourceFile.text();
+              
+              // Write to target using Bun.write
+              await Bun.write(targetPath, content);
+              installedFiles.push(relativePath);
+            }
+          }
+        }
+        
+        // Copy all hook files
+        await copyDirectory(sourceHooksDir, targetHooksDir, '');
+        
+        // Ensure serverUrl has the /events endpoint
+        const eventsUrl = serverUrl.endsWith('/events') ? serverUrl : 
+                         serverUrl.endsWith('/') ? `${serverUrl}events` : `${serverUrl}/events`;
+        
+        // Generate settings.json content with the generated sourceApp slug and serverUrl
+        const settingsContent = {
+          hooks: {
+            PreToolUse: [{
+              matcher: "",
+              hooks: [
+                { type: "command", command: "uv run .claude/hooks/pre_tool_use.py" },
+                { type: "command", command: `uv run .claude/hooks/send_event.py --source-app ${sourceApp} --event-type PreToolUse --summarize --server-url ${eventsUrl}` }
+              ]
+            }],
+            PostToolUse: [{
+              matcher: "",
+              hooks: [
+                { type: "command", command: "uv run .claude/hooks/post_tool_use.py" },
+                { type: "command", command: `uv run .claude/hooks/send_event.py --source-app ${sourceApp} --event-type PostToolUse --summarize --server-url ${eventsUrl}` }
+              ]
+            }],
+            Stop: [{
+              matcher: "",
+              hooks: [
+                { type: "command", command: "uv run .claude/hooks/stop.py --chat" },
+                { type: "command", command: `uv run .claude/hooks/send_event.py --source-app ${sourceApp} --event-type Stop --add-chat --server-url ${eventsUrl}` }
+              ]
+            }],
+            UserPromptSubmit: [{
+              hooks: [
+                { type: "command", command: "uv run .claude/hooks/user_prompt_submit.py --log-only" },
+                { type: "command", command: `uv run .claude/hooks/send_event.py --source-app ${sourceApp} --event-type UserPromptSubmit --summarize --server-url ${eventsUrl}` }
+              ]
+            }],
+            SubagentStop: [{
+              matcher: "",
+              hooks: [
+                { type: "command", command: "uv run .claude/hooks/subagent_stop.py" },
+                { type: "command", command: `uv run .claude/hooks/send_event.py --source-app ${sourceApp} --event-type SubagentStop --server-url ${eventsUrl}` }
+              ]
+            }]
+          }
+        };
+        
+        // Write settings.json using Bun.write
+        const settingsPath = path.join(targetClaudeDir, 'settings.json');
+        await Bun.write(settingsPath, JSON.stringify(settingsContent, null, 2));
+        installedFiles.push('settings.json');
+        
+        return new Response(JSON.stringify({
+          success: true,
+          message: 'Hooks installed successfully',
+          installedFiles,
+          sourceApp
+        }), {
+          headers: { ...headers, 'Content-Type': 'application/json' }
+        });
+        
+      } catch (error) {
+        console.error('Error installing hooks:', error);
+        return new Response(JSON.stringify({ 
+          success: false, 
+          error: `Failed to install hooks: ${error instanceof Error ? error.message : 'Unknown error'}` 
+        }), {
+          status: 500,
+          headers: { ...headers, 'Content-Type': 'application/json' }
+        });
+      }
     }
     
     // WebSocket upgrade

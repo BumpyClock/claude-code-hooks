@@ -45,9 +45,9 @@ function color(d: unknown, i: number) {
 
 <template>
   <VisTooltip 
-    :horizontal-shift="20" 
-    :vertical-shift="-10" 
-    :follows-cursor="true"
+    :horizontal-shift="10" 
+    :vertical-shift="-5" 
+    :follows-cursor="false"
     :container="undefined"
   />
   <VisCrosshair :template="template" :color="color" />

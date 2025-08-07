@@ -1,5 +1,5 @@
 <template>
-  <div class="bg-gradient-to-br from-[var(--theme-bg-primary)]/95 to-[var(--theme-bg-secondary)]/95 relative overflow-visible">
+  <div class="bg-gradient-to-br from-[var(--theme-bg-primary)]/95 to-[var(--theme-bg-secondary)]/95 relative overflow-hidden">
     <!-- Subtle background pattern -->
     <div class="absolute inset-0 opacity-5">
       <div class="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,var(--theme-primary)_1px,transparent_1px)] bg-[length:20px_20px]"></div>

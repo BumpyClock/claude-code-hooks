@@ -17,7 +17,7 @@
         :class="selectedProject === p.name ? 'bg-secondary/20' : ''"
         @click="$emit('update:selectedProject', p.name)"
       >
-        <span>{{ p.name }}</span>
+        <span>{{ getDisplayName(p.name) }}</span>
         <Badge variant="secondary">{{ p.count }}</Badge>
       </Button>
     </div>
@@ -29,6 +29,7 @@ import { computed } from 'vue'
 import type { HookEvent } from '../types'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
+import { useAppNames } from '@/composables/useAppNames'
 
 const props = defineProps<{
   events: HookEvent[];
@@ -38,6 +39,9 @@ const props = defineProps<{
     eventType: string;
   };
 }>()
+
+// Use friendly app names composable
+const { getDisplayName } = useAppNames()
 
 const projectOf = (e: HookEvent) => (e as any).project || (e as any).payload?.project || e.source_app
 

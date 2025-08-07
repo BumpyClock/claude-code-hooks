@@ -10,8 +10,8 @@
       <div class="pl-4 pr-4 py-2.5 ml-2">
         <!-- Header -->
         <div class="flex items-center justify-between mb-1.5">
-          <div class="flex items-center gap-2.5 min-w-0">
-            <span class="text-[13px] font-semibold tracking-tight text-[var(--theme-text-primary)] truncate max-w-[40%]" title="Project">
+          <div class="flex items-center gap-2.5 flex-1">
+            <span class="text-[13px] font-semibold tracking-tight text-[var(--theme-text-primary)] whitespace-nowrap" title="Project">
               {{ event.source_app }}
             </span>
             <Badge variant="outline" class="font-mono text-[10px] px-1.5 py-0.5 rounded-sm shrink-0" title="Session">
@@ -23,10 +23,6 @@
             </Badge>
           </div>
           <div class="flex items-center gap-2">
-            <!-- Time Range -->
-            <span class="text-[11px] text-[var(--theme-text-tertiary)] whitespace-nowrap">
-              {{ formatTimeRange(groupMeta.timeRange) }}
-            </span>
             <!-- Expand Toggle -->
             <Button
               variant="ghost"
@@ -63,13 +59,11 @@
               {{ groupSummary }}
             </div>
 
-            <!-- Time Range Visualization -->
+            <!-- Duration Information (simplified) -->
             <div class="mb-3">
               <div class="flex items-center gap-2 text-xs text-[var(--theme-text-tertiary)] mb-1">
                 <Clock class="h-3 w-3" />
                 <span>{{ formatDuration(groupMeta.timeRange) }} duration</span>
-                <span>•</span>
-                <span>{{ formatTime(groupMeta.timeRange[0]) }} - {{ formatTime(groupMeta.timeRange[1]) }}</span>
               </div>
               
               <!-- Progress bar showing time span -->
@@ -374,5 +368,12 @@ const copyGroupSummary = async () => {
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
+}
+
+/* Responsive adjustments for full-width cards */
+@media (max-width: 768px) {
+  .hover-lift:hover {
+    transform: translateY(-1px) scale(1.002);
+  }
 }
 </style>

@@ -12,6 +12,17 @@
           <h1 class="text-sm font-semibold text-[var(--theme-text-secondary)] tracking-wide">Claude Monitor</h1>
         </div>
         <div class="flex items-center gap-3">
+          <!-- Add Project Button -->
+          <Button
+            size="sm"
+            variant="outline"
+            class="text-xs gap-1"
+            @click="showHookInstaller = true"
+          >
+            <Plus class="w-3 h-3" />
+            Add Project
+          </Button>
+          
           <!-- Filters moved to header -->
           <div class="flex items-center gap-2">
             <!-- Project Filter -->
@@ -34,7 +45,7 @@
                   class="text-[var(--theme-text-secondary)] hover:bg-[var(--theme-bg-tertiary)]"
                 >
                   <div class="flex items-center justify-between w-full">
-                    <span>{{ project.name }}</span>
+                    <span>{{ getDisplayName(project.name) }}</span>
                     <Badge variant="secondary" class="ml-2">{{ project.count }}</Badge>
                   </div>
                 </SelectItem>
@@ -236,6 +247,12 @@
     </div>
 
     <ThemeManager :is-open="showThemeManager" @close="showThemeManager = false" />
+    
+    <HookInstallerModal 
+      :is-open="showHookInstaller" 
+      @close="showHookInstaller = false"
+      @success="handleProjectInstalled"
+    />
   </div>
 </template>
 
@@ -247,10 +264,11 @@ import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
 import { Select, SelectContent, SelectItem, SelectSeparator, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Badge } from '@/components/ui/badge'
-import { AlertCircle, Sun, Moon, Monitor, ListIcon, Layers, SettingsIcon } from 'lucide-vue-next';
+import { AlertCircle, Sun, Moon, Monitor, ListIcon, Layers, SettingsIcon, Plus } from 'lucide-vue-next';
 import { useWebSocket } from './composables/useWebSocket';
 import { useThemes } from './composables/useThemes';
 import { useGroupingPreferences } from './composables/useGroupingPreferences';
+import { useAppNames } from './composables/useAppNames';
 import EventTimeline from './components/EventTimeline.vue';
 import EventSwimlanes from './components/EventSwimlanes.vue';
 import GroupingControls from './components/GroupingControls.vue';
@@ -258,15 +276,18 @@ import StickScrollButton from './components/StickScrollButton.vue';
 import EventHeaderPulse from './components/EventHeaderPulse.vue';
 import ThemeManager from './components/ThemeManager.vue';
 import ProjectFilterCards from './components/ProjectFilterCards.vue';
+import HookInstallerModal from './components/HookInstallerModal.vue';
 
 const { events, error } = useWebSocket('ws://localhost:4000/stream');
 const themes = useThemes();
 const { groupingPreferences, swimlanePreferences } = useGroupingPreferences();
+const { getDisplayName, saveAppMapping } = useAppNames();
 
 const filters = ref({ sessionId: '__ALL_SESSIONS__', eventType: '__ALL_TYPES__' });
 const stickToBottom = ref(true);
 const showThemeManager = ref(false);
 const showThemeMenu = ref(false);
+const showHookInstaller = ref(false);
 const selectedProject = ref<string>('');
 const localSelectedProject = ref<string>('__ALL__');
 const viewMode = ref<'unified' | 'swimlanes'>('unified');
@@ -367,6 +388,15 @@ const setViewMode = (mode: 'unified' | 'swimlanes') => {
   if (mode === 'swimlanes' && !swimlanePreferences.value.enabled) {
     swimlanePreferences.value.enabled = true;
   }
+};
+
+const handleProjectInstalled = (projectData: { name: string; directory: string; slug: string }) => {
+  console.log('Project installed successfully:', projectData);
+  
+  // Save the app name mapping
+  saveAppMapping(projectData.slug, projectData.name);
+  
+  console.log('App mapping saved:', { slug: projectData.slug, displayName: projectData.name });
 };
 
 const handleClickOutside = (event: MouseEvent) => {

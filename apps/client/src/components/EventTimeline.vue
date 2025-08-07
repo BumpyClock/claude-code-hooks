@@ -1,14 +1,18 @@
 <template>
-  <div class="flex-1 mobile:h-[50vh] flex flex-col overflow-hidden bg-[var(--theme-bg-secondary)]">
+  <div class="flex-1 mobile:h-[50vh] flex overflow-hidden bg-[var(--theme-bg-secondary)]">
+    <!-- Global Timestamp Column -->
+    <TimestampColumn 
+      :events="filteredEventsSorted" 
+      :scroll-top="scrollTop"
+    />
     
     <!-- Scrollable Event List -->
     <div 
       ref="scrollContainer"
-      class="flex-1 overflow-y-auto overflow-x-hidden px-4 py-3 mobile:px-2 mobile:py-2 relative min-w-0"
+      class="flex-1 overflow-y-auto overflow-x-hidden py-3 mobile:py-2 relative min-w-0"
       @scroll="handleScroll"
     >
-      <div class="relative overflow-x-hidden min-w-0">
-        <div class="absolute left-32 top-0 bottom-0 w-px bg-gradient-to-b from-[var(--theme-border-primary)]/0 via-[var(--theme-border-primary)]/10 to-[var(--theme-border-primary)]/0"></div>
+      <div class="relative overflow-x-hidden min-w-0 px-4 mobile:px-2">
         <div class="space-y-3 mobile:space-y-2 min-w-0">
           <template v-for="event in filteredEventsSorted" :key="getEventKey(event)">
             <!-- Grouped Event Card with Animation -->
@@ -73,6 +77,7 @@ import type { HookEvent, FilterOptions } from '../types';
 import type { GroupedEvent } from '../types/grouping';
 import EventRow from './EventRow.vue';
 import GroupedEventCard from './GroupedEventCard.vue';
+import TimestampColumn from './TimestampColumn.vue';
 import { useEventColors } from '../composables/useEventColors';
 import { useEventGrouping } from '../composables/useEventGrouping';
 import { useGroupingPreferences } from '../composables/useGroupingPreferences';
@@ -98,6 +103,7 @@ const emit = defineEmits<{
 }>();
 
 const scrollContainer = ref<HTMLElement>();
+const scrollTop = ref(0);
 const { getGradientForSession, getColorForSession, getGradientForApp, getColorForApp, getHexColorForApp } = useEventColors();
 
 // Enhanced grouping system
@@ -183,12 +189,13 @@ const scrollToTop = () => {
 
 const handleScroll = () => {
   if (!scrollContainer.value) return;
-  const { scrollTop } = scrollContainer.value;
-  const isAtTop = scrollTop < 50;
+  const currentScrollTop = scrollContainer.value.scrollTop;
+  scrollTop.value = currentScrollTop;
+  const isAtTop = currentScrollTop < 50;
   if (isAtTop !== props.stickToBottom) emit('update:stickToBottom', isAtTop);
   
   // Emit scroll position for activity timeline synchronization
-  emit('scroll-sync', scrollTop);
+  emit('scroll-sync', currentScrollTop);
 };
 
 watch(() => props.events.length, async () => {

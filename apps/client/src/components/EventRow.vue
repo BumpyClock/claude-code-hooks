@@ -8,9 +8,9 @@
       
       <div class="pl-4 pr-4 py-2.5 ml-2">
         <div class="flex items-center justify-between mb-1.5">
-          <div class="flex items-center gap-2.5 min-w-0">
-            <span class="text-[13px] font-semibold tracking-tight text-[var(--theme-text-primary)]" title="Project">
-              {{ event.source_app }}
+          <div class="flex items-center gap-2.5 flex-1">
+            <span class="text-[13px] font-semibold tracking-tight text-[var(--theme-text-primary)] whitespace-nowrap" title="Project">
+              {{ getDisplayName(event.source_app) }}
             </span>
             <Badge variant="outline" class="font-mono text-[10px] px-1.5 py-0.5 rounded-sm shrink-0" title="Session">
               {{ sessionIdShort }}
@@ -19,9 +19,6 @@
               {{ agentName }}
             </Badge>
           </div>
-          <span class="text-[11px] text-[var(--theme-text-tertiary)] whitespace-nowrap">
-            {{ formatTime(event.timestamp) }}
-          </span>
         </div>
 
         <div class="flex items-start gap-3">
@@ -156,6 +153,13 @@
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
+
+/* Responsive adjustments for full-width cards */
+@media (max-width: 768px) {
+  .hover-lift:hover {
+    transform: translateY(-1px) scale(1.002);
+  }
+}
 </style>
 
 <script setup lang="ts">
@@ -165,6 +169,7 @@ import type { HookEvent } from '../types';
 import ChatTranscriptModal from './ChatTranscriptModal.vue';
 import EventDetailsModal from './EventDetailsModal.vue';
 import { Badge, Card } from '@/components/ui'
+import { useAppNames } from '@/composables/useAppNames'
 
 const props = defineProps<{
   event: HookEvent;
@@ -174,6 +179,9 @@ const props = defineProps<{
   appColorClass: string;
   appHexColor: string;
 }>();
+
+// Use friendly app names composable
+const { getDisplayName } = useAppNames()
 
 
 

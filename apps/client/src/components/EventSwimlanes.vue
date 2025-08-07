@@ -1,18 +1,25 @@
 <template>
-  <div class="flex-1 flex flex-col overflow-hidden bg-[var(--theme-bg-secondary)]">
+  <div class="flex-1 flex overflow-hidden bg-[var(--theme-bg-secondary)]">
+    <!-- Global Timestamp Column -->
+    <TimestampColumn 
+      :events="allEventsSorted" 
+      :scroll-top="scrollTop"
+    />
+    
     <!-- Swimlane Container -->
     <div 
       ref="scrollContainer"
-      class="flex-1 overflow-auto px-4 py-3 mobile:px-2 mobile:py-2 relative"
+      class="flex-1 overflow-auto py-3 mobile:py-2 relative"
       @scroll="handleScroll"
     >
-      <div 
-        class="flex gap-6 min-h-full"
-        :style="{
-          minWidth: needsHorizontalScroll ? 'max-content' : '100%',
-          width: needsHorizontalScroll ? 'auto' : '100%'
-        }"
-      >
+      <div class="px-4 mobile:px-2">
+        <div 
+          class="flex gap-6 min-h-full"
+          :style="{
+            minWidth: needsHorizontalScroll ? 'max-content' : '100%',
+            width: needsHorizontalScroll ? 'auto' : '100%'
+          }"
+        >
         <!-- Project Lanes (Dynamic Width) -->
         <div
           v-for="lane in sortedLanes"
@@ -192,6 +199,8 @@
             </div>
           </div>
         </div>
+        <!-- End Empty State for All Lanes -->
+        </div>
       </div>
     </div>
   </div>
@@ -204,6 +213,7 @@ import type { HookEvent } from '../types'
 import type { GroupedEvent, ProjectLane } from '../types/grouping'
 import EventRow from './EventRow.vue'
 import GroupedEventCard from './GroupedEventCard.vue'
+import TimestampColumn from './TimestampColumn.vue'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { useEventColors } from '../composables/useEventColors'
@@ -227,6 +237,7 @@ const emit = defineEmits<{
 }>()
 
 const scrollContainer = ref<HTMLElement>()
+const scrollTop = ref(0)
 const { getGradientForSession, getColorForSession, getGradientForApp, getColorForApp, getHexColorForApp } = useEventColors()
 const { groupingPreferences, swimlanePreferences, toggleLaneCollapsed, toggleLanePinned } = useGroupingPreferences()
 
@@ -247,6 +258,19 @@ const { processEventAnimation, getAnimationClasses, isAnimating } = useEventAnim
 const projectOf = (e: HookEvent | GroupedEvent) => {
   return (e as any).project || (e as any).payload?.project || e.source_app
 }
+
+// All events sorted chronologically for the timestamp column
+const allEventsSorted = computed(() => {
+  return [...groupedEvents.value].sort((a, b) => {
+    const aTime = ('groupMeta' in a) 
+      ? (a as GroupedEvent).groupMeta.timeRange[1] 
+      : (a.timestamp || 0)
+    const bTime = ('groupMeta' in b) 
+      ? (b as GroupedEvent).groupMeta.timeRange[1] 
+      : (b.timestamp || 0)
+    return bTime - aTime // newest first
+  })
+})
 
 // Create project lanes from events
 const projectLanes = computed<ProjectLane[]>(() => {
@@ -413,15 +437,16 @@ const scrollToTop = () => {
 const handleScroll = () => {
   if (!scrollContainer.value) return
   
-  const { scrollTop, scrollLeft } = scrollContainer.value
-  const isAtTop = scrollTop < 50
+  const { scrollTop: currentScrollTop, scrollLeft } = scrollContainer.value
+  scrollTop.value = currentScrollTop
+  const isAtTop = currentScrollTop < 50
   
   if (isAtTop !== props.stickToBottom) {
     emit('update:stickToBottom', isAtTop)
   }
   
   // Emit both vertical and horizontal scroll positions for potential synchronization
-  emit('scroll-sync', scrollTop)
+  emit('scroll-sync', currentScrollTop)
 }
 
 // Auto-scroll when new events arrive
