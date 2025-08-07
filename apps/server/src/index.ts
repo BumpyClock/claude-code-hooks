@@ -346,45 +346,97 @@ const server = Bun.serve({
           });
         }
         
-        // Source and target directories
-        const sourceHooksDir = '/Users/adityasharma/Projects/claude-code-hooks/.claude/hooks';
+        // Use sync-hooks.py script for cross-platform hook installation
+        const projectRoot = path.dirname(path.dirname(path.dirname(__dirname)));
+        const syncScriptPath = path.join(projectRoot, 'sync-hooks.py');
         const targetClaudeDir = path.join(targetPath, '.claude');
-        const targetHooksDir = path.join(targetClaudeDir, 'hooks');
         
-        // Create directories using Bun's fs compatibility layer
+        // Ensure .claude directory exists
         const fs = await import('fs').then(m => m.promises);
         await fs.mkdir(targetClaudeDir, { recursive: true });
-        await fs.mkdir(targetHooksDir, { recursive: true });
         
-        // Track installed files
-        const installedFiles: string[] = [];
+        // Track installed files - we'll get these from the script output
+        let installedFiles: string[] = [];
+        let syncMethod = 'unknown';
         
-        // Recursive function to copy files using Bun APIs
-        async function copyDirectory(source: string, target: string, basePath: string = '') {
-          const entries = await fs.readdir(source, { withFileTypes: true });
+        try {
+          // Run the sync-hooks.py script using Bun's subprocess (cross-platform Python)
+          const pythonCmd = process.platform === 'darwin' ? 'python3' : 'python';
+          const syncProcess = Bun.spawn([
+            pythonCmd, syncScriptPath, targetPath, '--verbose'
+          ], {
+            stdout: 'pipe',
+            stderr: 'pipe',
+            cwd: projectRoot
+          });
           
-          for (const entry of entries) {
-            const sourcePath = path.join(source, entry.name);
-            const targetPath = path.join(target, entry.name);
-            const relativePath = basePath ? path.join(basePath, entry.name) : entry.name;
-            
-            if (entry.isDirectory()) {
-              await fs.mkdir(targetPath, { recursive: true });
-              await copyDirectory(sourcePath, targetPath, relativePath);
-            } else if (entry.isFile()) {
-              // Read the source file using Bun.file
-              const sourceFile = Bun.file(sourcePath);
-              const content = await sourceFile.text();
-              
-              // Write to target using Bun.write
-              await Bun.write(targetPath, content);
-              installedFiles.push(relativePath);
+          const [stdout, stderr] = await Promise.all([
+            new Response(syncProcess.stdout).text(),
+            new Response(syncProcess.stderr).text()
+          ]);
+          
+          await syncProcess.exited;
+          
+          if (syncProcess.exitCode !== 0) {
+            console.error('sync-hooks.py failed:', stderr);
+            throw new Error(`Hook synchronization failed: ${stderr}`);
+          }
+          
+          // Parse the output to get sync statistics
+          const lines = stdout.split('\n');
+          for (const line of lines) {
+            if (line.includes('files processed:')) {
+              const match = line.match(/Total files processed: (\d+)/);
+              if (match) {
+                installedFiles = Array.from({ length: parseInt(match[1]) }, (_, i) => `hook-file-${i + 1}.py`);
+              }
+            }
+            if (line.includes('Symlinked:') || line.includes('Hard linked:') || line.includes('Copied:')) {
+              // Determine primary sync method from output
+              if (line.includes('Symlinked:') && !line.includes(': 0')) syncMethod = 'symlinked';
+              else if (line.includes('Hard linked:') && !line.includes(': 0')) syncMethod = 'hard-linked';  
+              else if (line.includes('Copied:') && !line.includes(': 0')) syncMethod = 'copied';
             }
           }
+          
+          console.log(`Hook sync completed using method: ${syncMethod}`);
+          
+        } catch (error) {
+          console.error('Error running sync-hooks.py:', error);
+          // Fallback to original copy method if sync script fails
+          console.log('Falling back to file copying method');
+          
+          const sourceHooksDir = path.join(projectRoot, '.claude/hooks');
+          const targetHooksDir = path.join(targetClaudeDir, 'hooks');
+          await fs.mkdir(targetHooksDir, { recursive: true });
+          
+          // Recursive function to copy files using Bun APIs (fallback)
+          async function copyDirectory(source: string, target: string, basePath: string = '') {
+            const entries = await fs.readdir(source, { withFileTypes: true });
+            
+            for (const entry of entries) {
+              const sourcePath = path.join(source, entry.name);
+              const targetPath = path.join(target, entry.name);
+              const relativePath = basePath ? path.join(basePath, entry.name) : entry.name;
+              
+              if (entry.isDirectory()) {
+                await fs.mkdir(targetPath, { recursive: true });
+                await copyDirectory(sourcePath, targetPath, relativePath);
+              } else if (entry.isFile()) {
+                // Read the source file using Bun.file
+                const sourceFile = Bun.file(sourcePath);
+                const content = await sourceFile.text();
+                
+                // Write to target using Bun.write
+                await Bun.write(targetPath, content);
+                installedFiles.push(relativePath);
+              }
+            }
+          }
+          
+          await copyDirectory(sourceHooksDir, targetHooksDir, '');
+          syncMethod = 'copied (fallback)';
         }
-        
-        // Copy all hook files
-        await copyDirectory(sourceHooksDir, targetHooksDir, '');
         
         // Ensure serverUrl has the /events endpoint
         const eventsUrl = serverUrl.endsWith('/events') ? serverUrl : 
@@ -439,7 +491,8 @@ const server = Bun.serve({
           success: true,
           message: 'Hooks installed successfully',
           installedFiles,
-          sourceApp
+          sourceApp,
+          syncMethod
         }), {
           headers: { ...headers, 'Content-Type': 'application/json' }
         });

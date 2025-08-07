@@ -1,5 +1,5 @@
 <template>
-  <div class="flex-1 mobile:h-[50vh] flex overflow-hidden bg-[var(--theme-bg-secondary)]">
+  <div class="flex-1 mobile:h-[50vh] flex overflow-hidden bg-[var(--theme-bg-secondary)] touch-pan-y">
     <!-- Global Timestamp Column -->
     <TimestampColumn 
       :events="filteredEventsSorted" 
@@ -9,11 +9,12 @@
     <!-- Scrollable Event List -->
     <div 
       ref="scrollContainer"
-      class="flex-1 overflow-y-auto overflow-x-hidden py-3 mobile:py-2 relative min-w-0"
+      class="flex-1 overflow-y-auto overflow-x-hidden py-3 mobile:py-2 relative min-w-0 mobile-no-scroll"
       @scroll="handleScroll"
+      style="-webkit-overflow-scrolling: touch;"
     >
-      <div class="relative overflow-x-hidden min-w-0 px-4 mobile:px-2">
-        <div class="space-y-3 mobile:space-y-2 min-w-0">
+      <div class="relative overflow-x-hidden min-w-0 px-2 sm:px-4">
+        <div class="space-y-2 sm:space-y-3 min-w-0">
           <template v-for="event in filteredEventsSorted" :key="getEventKey(event)">
             <!-- Grouped Event Card with Animation -->
             <div

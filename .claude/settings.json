@@ -45,7 +45,7 @@
           },
           {
             "type": "command",
-            "command": "uv run .claude/hooks/send_event.py --source-app cc-hook-multi-agent-obvs --event-type PreToolUse --summarize"
+            "command": "uv run .claude/hooks/send_event.py --source-app cc-hook-multi-agent-obvs --event-type PreToolUse --hook-name pre-tool-use --summarize"
           }
         ]
       }
@@ -60,7 +60,7 @@
           },
           {
             "type": "command",
-            "command": "uv run .claude/hooks/send_event.py --source-app cc-hook-multi-agent-obvs --event-type PostToolUse --summarize"
+            "command": "uv run .claude/hooks/send_event.py --source-app cc-hook-multi-agent-obvs --event-type PostToolUse --hook-name post-tool-use --summarize"
           }
         ]
       },
@@ -85,7 +85,7 @@
           },
           {
             "type": "command",
-            "command": "uv run .claude/hooks/send_event.py --source-app cc-hook-multi-agent-obvs --event-type Notification --summarize"
+            "command": "uv run .claude/hooks/send_event.py --source-app cc-hook-multi-agent-obvs --event-type Notification --hook-name notification --summarize"
           }
         ]
       }
@@ -140,7 +140,7 @@
           },
           {
             "type": "command",
-            "command": "uv run .claude/hooks/send_event.py --source-app cc-hook-multi-agent-obvs --event-type UserPromptSubmit --summarize"
+            "command": "uv run .claude/hooks/send_event.py --source-app cc-hook-multi-agent-obvs --event-type UserPromptSubmit --hook-name user-prompt-submit --summarize"
           }
         ]
       }

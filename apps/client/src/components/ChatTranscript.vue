@@ -1,13 +1,15 @@
 <template>
-  <div class="bg-background rounded-lg p-4 h-full overflow-y-auto space-y-4 border border-border">
+  <div class="bg-[var(--theme-bg-primary)] rounded-lg p-2 sm:p-4 h-full overflow-y-auto space-y-2 sm:space-y-4 border border-[var(--theme-border-primary)]/20 mobile-no-scroll" style="-webkit-overflow-scrolling: touch;">
     <div v-for="(item, index) in chatItems" :key="index">
       <!-- User Message -->
       <Card v-if="item.type === 'user' && item.message" 
-           class="p-4 bg-primary/5 border-primary/20">
+           class="p-3 sm:p-4 bg-primary/5 border-primary/20 touch-manipulation">
         <div class="flex items-start justify-between">
           <div class="flex items-start space-x-3 flex-1">
-            <Badge class="text-sm font-semibold px-3 py-1.5 bg-primary text-primary-foreground">
-              👤 User
+            <Badge class="text-xs sm:text-sm font-semibold px-2 sm:px-3 py-1 sm:py-1.5 bg-primary text-primary-foreground shrink-0">
+              <User class="w-3 h-3 sm:w-4 sm:h-4 mr-1" />
+              <span class="hidden xs:inline">User</span>
+              <span class="xs:hidden">U</span>
             </Badge>
             <div class="flex-1">
               <!-- Handle string content -->
@@ -26,7 +28,10 @@
                   <!-- Tool result -->
                   <div v-else-if="content.type === 'tool_result'" 
                        class="bg-muted p-3 rounded-md border border-border">
-                    <Badge variant="outline" size="xs" class="mb-2">🔧 Tool Result</Badge>
+                    <Badge variant="outline" size="xs" class="mb-2">
+                      <Wrench class="w-3 h-3 mr-1" />
+                      Tool Result
+                    </Badge>
                     <pre class="text-sm text-foreground mt-1 overflow-x-auto">{{ content.content }}</pre>
                   </div>
                 </div>
@@ -70,7 +75,8 @@
         <div class="flex items-start justify-between">
           <div class="flex items-start space-x-3 flex-1">
             <Badge class="text-sm font-semibold px-3 py-1.5 bg-secondary text-secondary-foreground">
-              🤖 Assistant
+              <Bot class="w-3 h-3 sm:w-4 sm:h-4 mr-1" />
+              Assistant
             </Badge>
             <div class="flex-1">
               <!-- Handle content array -->
@@ -86,7 +92,8 @@
                        class="bg-warning/5 p-3 rounded-md border border-warning/20">
                     <div class="flex items-center space-x-2 mb-2">
                       <Badge variant="outline" class="bg-warning/10 text-warning-foreground border-warning/30">
-                        🔧 {{ content.name }}
+                        <Wrench class="w-3 h-3 mr-1" />
+                        {{ content.name }}
                       </Badge>
                     </div>
                     <pre class="text-sm text-foreground overflow-x-auto bg-muted p-2 rounded">{{ JSON.stringify(content.input, null, 2) }}</pre>
@@ -96,7 +103,8 @@
               <!-- Usage info -->
               <div v-if="item.message.usage" class="mt-2">
                 <Badge variant="outline" size="xs" class="text-xs text-muted-foreground">
-                  📊 Tokens: {{ item.message.usage.input_tokens }} in / {{ item.message.usage.output_tokens }} out
+                  <BarChart3 class="w-3 h-3 mr-1" />
+                  Tokens: {{ item.message.usage.input_tokens }} in / {{ item.message.usage.output_tokens }} out
                 </Badge>
               </div>
               <!-- Timestamp -->
@@ -138,7 +146,8 @@
         <div class="flex items-start justify-between">
           <div class="flex items-start space-x-3 flex-1">
             <Badge class="text-sm font-semibold px-3 py-1.5 bg-warning text-warning-foreground">
-              ⚙️ System
+              <Settings class="w-3 h-3 sm:w-4 sm:h-4 mr-1" />
+              System
             </Badge>
             <div class="flex-1">
               <p class="text-base text-foreground font-medium leading-relaxed">
@@ -191,7 +200,8 @@
           <div class="flex items-start space-x-3 flex-1">
             <Badge class="text-sm font-semibold px-3 py-1.5"
                   :class="item.role === 'user' ? 'bg-primary text-primary-foreground' : 'bg-secondary text-secondary-foreground'">
-              {{ item.role === 'user' ? '👤 User' : '🤖 Assistant' }}
+              <component :is="item.role === 'user' ? User : Bot" class="w-3 h-3 sm:w-4 sm:h-4 mr-1" />
+              {{ item.role === 'user' ? 'User' : 'Assistant' }}
             </Badge>
             <div class="flex-1">
               <p class="text-base text-foreground whitespace-pre-wrap font-medium leading-relaxed">
@@ -231,6 +241,7 @@
 
 <script setup lang="ts">
 import { computed, ref } from 'vue';
+import { User, Bot, Settings, Wrench, CheckCircle, Copy, ChevronDown, ChevronUp, BarChart3 } from 'lucide-vue-next';
 import { Badge, Card, Button } from '@/components/ui';
 
 const props = defineProps<{
@@ -287,7 +298,10 @@ const cleanCommandContent = (content: string) => {
 const copyButtonStates = ref<Map<number, string>>(new Map());
 
 const getCopyButtonText = (index: number) => {
-  return copyButtonStates.value.get(index) || '📋';
+  const state = copyButtonStates.value.get(index);
+  if (state === 'success') return 'Copied!';
+  if (state === 'error') return 'Failed';
+  return 'Copy';
 };
 
 const copyMessage = async (index: number) => {
@@ -298,14 +312,14 @@ const copyMessage = async (index: number) => {
     const jsonPayload = JSON.stringify(item, null, 2);
     await navigator.clipboard.writeText(jsonPayload);
     
-    copyButtonStates.value.set(index, '✅');
+    copyButtonStates.value.set(index, 'success');
     setTimeout(() => {
       copyButtonStates.value.delete(index);
       copyButtonStates.value = new Map(copyButtonStates.value);
     }, 2000);
   } catch (err) {
     console.error('Failed to copy:', err);
-    copyButtonStates.value.set(index, '❌');
+    copyButtonStates.value.set(index, 'error');
     setTimeout(() => {
       copyButtonStates.value.delete(index);
       copyButtonStates.value = new Map(copyButtonStates.value);
@@ -315,3 +329,56 @@ const copyMessage = async (index: number) => {
   copyButtonStates.value = new Map(copyButtonStates.value);
 };
 </script>
+
+<style scoped>
+/* Mobile-specific optimizations */
+@media (max-width: 768px) {
+  /* Improve text wrapping and readability on mobile */
+  :deep(.break-words) {
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    word-break: break-word;
+    hyphens: auto;
+  }
+  
+  /* Optimize pre elements for mobile */
+  :deep(pre) {
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+  }
+  
+  /* Ensure buttons are touch-friendly */
+  :deep(.touch-manipulation) {
+    touch-action: manipulation;
+  }
+  
+  /* Better card spacing on mobile */
+  :deep(.space-y-2 > * + *) {
+    margin-top: 0.5rem;
+  }
+}
+
+/* Enhanced mobile scrolling */
+.mobile-no-scroll::-webkit-scrollbar {
+  display: none;
+}
+
+.mobile-no-scroll {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+/* Improve button interactions */
+:deep(button) {
+  min-height: 44px;
+  min-width: 44px;
+}
+
+@media (min-width: 640px) {
+  :deep(button) {
+    min-height: auto;
+    min-width: auto;
+  }
+}
+</style>

@@ -1,112 +1,102 @@
 <template>
-  <Teleport to="body">
-    <div v-if="isOpen" class="fixed inset-0 z-50 flex items-center justify-center p-4 mobile:p-0">
-      <!-- Backdrop -->
-      <div 
-        class="fixed inset-0 bg-black bg-opacity-50 transition-opacity"
-        @click="close"
-      ></div>
-      
-      <!-- Modal -->
-      <div 
-        class="relative bg-white dark:bg-gray-800 rounded-lg mobile:rounded-none shadow-xl flex flex-col overflow-hidden z-10 mobile:w-full mobile:h-full mobile:fixed mobile:inset-0"
-        :style="{ width: '85vw', height: '85vh' }"
-        :class="{ 'mobile:!w-full mobile:!h-full': true }"
-        @click.stop
-      >
-          <!-- Header -->
-          <div class="flex-shrink-0 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 p-6 mobile:p-3">
-            <div class="flex items-center justify-between mb-4 mobile:mb-2">
-              <h2 class="text-3xl mobile:text-lg font-semibold text-gray-900 dark:text-white">
-                💬 Chat Transcript
-              </h2>
-              <button
-                @click="close"
-                class="p-2 mobile:p-3 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center"
-              >
-                <svg class="w-6 h-6 mobile:w-5 mobile:h-5 text-gray-500 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
+  <Dialog :open="isOpen" @update:open="handleDialogChange">
+    <DialogContent class="max-w-6xl w-[95vw] h-[95vh] mobile:max-w-full mobile:w-full mobile:h-full mobile:rounded-none p-0 gap-0">
+      <!-- Header -->
+      <DialogHeader class="flex-shrink-0 bg-[var(--theme-bg-primary)] border-b border-[var(--theme-border-primary)]/20 p-4 sm:p-6">
+        <DialogTitle class="text-xl sm:text-2xl md:text-3xl font-semibold text-[var(--theme-text-primary)] flex items-center gap-2">
+          <MessageSquare class="w-5 h-5 sm:w-6 sm:h-6 text-primary" />
+          Chat Transcript
+        </DialogTitle>
+        
+        <!-- Search and Filters -->
+        <div class="space-y-3 sm:space-y-4 mt-4">
+          <!-- Search Input -->
+          <div class="flex flex-col sm:flex-row gap-2">
+            <div class="relative flex-1">
+              <Input
+                v-model="searchQuery"
+                @keyup.enter="executeSearch"
+                type="text"
+                placeholder="Search transcript..."
+                class="pl-10 h-10 sm:h-12 text-base bg-[var(--theme-bg-primary)] border-[var(--theme-border-primary)]/40 text-[var(--theme-text-primary)] focus:ring-primary focus:border-primary"
+              />
+              <Search class="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-[var(--theme-text-tertiary)]" />
             </div>
-            
-            <!-- Search and Filters -->
-            <div class="space-y-4">
-              <!-- Search Input -->
-              <div class="flex gap-2">
-                <div class="relative flex-1">
-                  <input
-                    v-model="searchQuery"
-                    @keyup.enter="executeSearch"
-                    type="text"
-                    placeholder="Search transcript..."
-                    class="w-full px-4 py-2 mobile:px-3 mobile:py-2 pl-10 mobile:pl-8 text-lg mobile:text-base border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
-                  >
-                  <svg class="absolute left-3 top-3 w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                  </svg>
-                </div>
-                <button
-                  @click="executeSearch"
-                  class="px-4 py-2 mobile:px-3 mobile:py-2 bg-blue-500 hover:bg-blue-600 text-white font-medium rounded-lg transition-colors text-base mobile:text-sm min-w-[44px] min-h-[44px] flex items-center justify-center"
-                >
-                  Search
-                </button>
-                <button
-                  @click="copyAllMessages"
-                  class="px-4 py-2 mobile:px-3 mobile:py-2 bg-gray-500 hover:bg-gray-600 text-white font-medium rounded-lg transition-colors text-base mobile:text-sm min-w-[44px] min-h-[44px] flex items-center justify-center"
-                  title="Copy all messages as JSON"
-                >
-                  {{ copyAllButtonText }}
-                </button>
-              </div>
-              
-              <!-- Filters -->
-              <div class="flex flex-wrap gap-2 mobile:gap-1 max-h-24 mobile:max-h-32 overflow-y-auto p-2 mobile:p-1 bg-gray-50 dark:bg-gray-900/50 rounded-lg mobile:overflow-x-auto mobile:pb-2">
-                <button
-                  v-for="filter in filters"
-                  :key="filter.type"
-                  @click="toggleFilter(filter.type)"
-                  class="px-4 py-2 mobile:px-3 mobile:py-1.5 rounded-full text-sm mobile:text-xs font-medium transition-colors min-h-[44px] mobile:min-h-[36px] flex items-center whitespace-nowrap"
-                  :class="activeFilters.includes(filter.type) 
-                    ? 'bg-blue-500 text-white' 
-                    : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'"
-                >
-                  <span class="mr-1">{{ filter.icon }}</span>
-                  {{ filter.label }}
-                </button>
-                
-                <!-- Clear Filters -->
-                <button
-                  v-if="searchQuery || activeSearchQuery || activeFilters.length > 0"
-                  @click="clearSearch"
-                  class="px-4 py-2 mobile:px-3 mobile:py-1.5 rounded-full text-sm mobile:text-xs font-medium bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300 hover:bg-red-200 dark:hover:bg-red-900/50 min-h-[44px] mobile:min-h-[36px] flex items-center whitespace-nowrap"
-                >
-                  Clear All
-                </button>
-              </div>
-              
-              <!-- Results Count -->
-              <div v-if="activeSearchQuery || activeFilters.length > 0" class="text-sm mobile:text-xs text-gray-500 dark:text-gray-400">
-                Showing {{ filteredChat.length }} of {{ chat.length }} messages
-                <span v-if="activeSearchQuery" class="ml-2 font-medium mobile:block mobile:ml-0 mobile:mt-1">
-                  (searching for "{{ activeSearchQuery }}")
-                </span>
-              </div>
+            <div class="flex gap-2">
+              <Button
+                @click="executeSearch"
+                class="h-10 sm:h-12 px-4 bg-primary hover:bg-primary/90 text-primary-foreground"
+              >
+                <Search class="w-4 h-4 mr-2" />
+                <span class="hidden sm:inline">Search</span>
+              </Button>
+              <Button
+                @click="copyAllMessages"
+                variant="secondary"
+                class="h-10 sm:h-12 px-4 bg-[var(--theme-bg-tertiary)] hover:bg-[var(--theme-bg-quaternary)] text-[var(--theme-text-primary)]"
+                :title="'Copy all messages as JSON'"
+              >
+                <Copy class="w-4 h-4 mr-2" />
+                <span class="hidden sm:inline">{{ copyAllButtonText.replace(/📋|✅|❌/g, '').trim() }}</span>
+                <component :is="copyAllButtonText.includes('Copied') ? CheckCircle : copyAllButtonText.includes('Failed') ? X : Copy" class="w-4 h-4 sm:hidden" />
+              </Button>
             </div>
           </div>
           
-          <!-- Content -->
-          <div class="flex-1 p-6 mobile:p-3 overflow-hidden flex flex-col">
-            <ChatTranscript :chat="filteredChat" />
+          <!-- Filters -->
+          <div class="flex flex-wrap gap-1.5 sm:gap-2 max-h-24 sm:max-h-32 overflow-y-auto p-2 sm:p-3 bg-[var(--theme-bg-secondary)] border border-[var(--theme-border-primary)]/20 rounded-lg">
+            <Badge
+              v-for="filter in filters"
+              :key="filter.type"
+              @click="toggleFilter(filter.type)"
+              :variant="activeFilters.includes(filter.type) ? 'default' : 'outline'"
+              class="cursor-pointer transition-all hover:scale-105 min-h-[36px] sm:min-h-[40px] px-3 py-1.5 text-xs sm:text-sm font-medium touch-manipulation flex items-center"
+              :class="{
+                'bg-primary text-primary-foreground hover:bg-primary/90': activeFilters.includes(filter.type),
+                'bg-[var(--theme-bg-primary)] text-[var(--theme-text-primary)] border-[var(--theme-border-primary)]/40 hover:bg-[var(--theme-bg-tertiary)]': !activeFilters.includes(filter.type)
+              }"
+            >
+              <component :is="getFilterIcon(filter.icon)" class="w-3 h-3 sm:w-4 sm:h-4 mr-1.5" />
+              {{ filter.label }}
+            </Badge>
+            
+            <!-- Clear Filters -->
+            <Badge
+              v-if="searchQuery || activeSearchQuery || activeFilters.length > 0"
+              @click="clearSearch"
+              variant="destructive"
+              class="cursor-pointer transition-all hover:scale-105 min-h-[36px] sm:min-h-[40px] px-3 py-1.5 text-xs sm:text-sm font-medium touch-manipulation bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              <X class="w-3 h-3 mr-1.5" />
+              Clear All
+            </Badge>
+          </div>
+          
+          <!-- Results Count -->
+          <div v-if="activeSearchQuery || activeFilters.length > 0" class="text-xs sm:text-sm text-[var(--theme-text-tertiary)] flex flex-col sm:flex-row sm:items-center gap-1">
+            <span>Showing {{ filteredChat.length }} of {{ chat.length }} messages</span>
+            <span v-if="activeSearchQuery" class="font-medium text-[var(--theme-text-secondary)]">
+              (searching for "{{ activeSearchQuery }}")
+            </span>
           </div>
         </div>
-    </div>
-  </Teleport>
+      </DialogHeader>
+      
+      <!-- Content -->
+      <div class="flex-1 p-4 sm:p-6 overflow-hidden flex flex-col bg-[var(--theme-bg-primary)] min-h-0">
+        <ChatTranscript :chat="filteredChat" />
+      </div>
+    </DialogContent>
+  </Dialog>
 </template>
 
 <script setup lang="ts">
 import { ref, computed, watch, onMounted, onUnmounted } from 'vue';
+import { MessageSquare, Search, Copy, X, User, Bot, Settings, Wrench, CheckCircle, FileText, Edit3, Edit } from 'lucide-vue-next';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
 import ChatTranscript from './ChatTranscript.vue';
 
 const props = defineProps<{
@@ -125,19 +115,19 @@ const copyAllButtonText = ref('📋 Copy All');
 
 const filters = [
   // Message types
-  { type: 'user', label: 'User', icon: '👤' },
-  { type: 'assistant', label: 'Assistant', icon: '🤖' },
-  { type: 'system', label: 'System', icon: '⚙️' },
+  { type: 'user', label: 'User', icon: 'User' },
+  { type: 'assistant', label: 'Assistant', icon: 'Bot' },
+  { type: 'system', label: 'System', icon: 'Settings' },
   
   // Tool actions
-  { type: 'tool_use', label: 'Tool Use', icon: '🔧' },
-  { type: 'tool_result', label: 'Tool Result', icon: '✅' },
+  { type: 'tool_use', label: 'Tool Use', icon: 'Wrench' },
+  { type: 'tool_result', label: 'Tool Result', icon: 'CheckCircle' },
   
   // Specific tools
-  { type: 'Read', label: 'Read', icon: '📄' },
-  { type: 'Write', label: 'Write', icon: '✍️' },
-  { type: 'Edit', label: 'Edit', icon: '✏️' },
-  { type: 'Glob', label: 'Glob', icon: '🔎' },
+  { type: 'Read', label: 'Read', icon: 'FileText' },
+  { type: 'Write', label: 'Write', icon: 'Edit3' },
+  { type: 'Edit', label: 'Edit', icon: 'Edit' },
+  { type: 'Glob', label: 'Glob', icon: 'Search' },
 ];
 
 const toggleFilter = (type: string) => {
@@ -161,6 +151,27 @@ const clearSearch = () => {
 
 const close = () => {
   emit('close');
+};
+
+const handleDialogChange = (open: boolean) => {
+  if (!open) {
+    close();
+  }
+};
+
+const getFilterIcon = (iconName: string) => {
+  const iconMap: Record<string, any> = {
+    'User': User,
+    'Bot': Bot,
+    'Settings': Settings,
+    'Wrench': Wrench,
+    'CheckCircle': CheckCircle,
+    'FileText': FileText,
+    'Edit3': Edit3,
+    'Edit': Edit,
+    'Search': Search
+  };
+  return iconMap[iconName] || Settings;
 };
 
 const copyAllMessages = async () => {

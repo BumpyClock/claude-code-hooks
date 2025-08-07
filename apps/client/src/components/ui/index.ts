@@ -57,3 +57,6 @@ export {
 
 // Separator component
 export { default as Separator } from './separator/Separator.vue'
+
+// Input component
+export { Input } from './input'

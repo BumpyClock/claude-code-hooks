@@ -1,38 +1,38 @@
 <template>
   <div 
-    class="timestamp-column sticky left-0 z-10 flex-shrink-0 bg-[var(--theme-bg-primary)]/95 backdrop-blur-sm border-r border-[var(--theme-border-primary)]/20"
+    class="timestamp-column sticky left-0 z-20 flex-shrink-0 bg-[var(--theme-bg-primary)]/95 backdrop-blur-sm border-r border-[var(--theme-border-primary)]/20"
     :class="[
-      'w-16 md:w-20', // Responsive width
+      'w-10 xs:w-12 sm:w-14 md:w-16 lg:w-20', // Progressive responsive width
       hasEvents && 'shadow-sm'
     ]"
   >
     <div class="h-full relative">
       <!-- Timeline Header -->
-      <div class="sticky top-0 z-20 bg-[var(--theme-bg-primary)]/95 backdrop-blur-lg border-b border-[var(--theme-border-primary)]/20 px-3 py-2">
-        <span class="text-[10px] text-[var(--theme-text-tertiary)] uppercase tracking-wide font-medium">Time</span>
+      <div class="sticky top-0 z-30 bg-[var(--theme-bg-primary)]/95 backdrop-blur-lg border-b border-[var(--theme-border-primary)]/20 px-1 xs:px-1.5 sm:px-2 md:px-3 py-2">
+        <span class="text-[8px] xs:text-[9px] sm:text-[10px] text-[var(--theme-text-tertiary)] uppercase tracking-wide font-medium">{{ isMobile ? 'T' : 'Time' }}</span>
       </div>
       
       <!-- Timestamp Entries -->
-      <div class="space-y-3 px-2 py-3">
+      <div class="space-y-2 sm:space-y-3 px-0.5 xs:px-1 sm:px-2 py-2 sm:py-3">
         <div
           v-for="entry in timestampEntries"
           :key="entry.id"
-          class="text-right"
+          class="text-right overflow-hidden"
           :style="{ height: entry.height + 'px', minHeight: entry.minHeight + 'px' }"
         >
           <div class="flex flex-col justify-start h-full pt-2">
             <!-- Primary Timestamp -->
             <span 
-              class="text-[11px] text-[var(--theme-text-tertiary)] whitespace-nowrap leading-tight"
+              class="text-[8px] xs:text-[9px] sm:text-[10px] md:text-[11px] text-[var(--theme-text-tertiary)] whitespace-nowrap leading-tight block truncate"
               :title="entry.fullTime"
             >
-              {{ entry.time }}
+              {{ isMobile ? entry.veryShortTime : (isTablet ? entry.shortTime : entry.time) }}
             </span>
             
             <!-- Time Range for Grouped Events -->
             <span 
-              v-if="entry.isGrouped && entry.endTime" 
-              class="text-[9px] text-[var(--theme-text-quaternary)] whitespace-nowrap leading-tight mt-0.5"
+              v-if="entry.isGrouped && entry.endTime && !isMobile" 
+              class="text-[7px] xs:text-[8px] sm:text-[9px] text-[var(--theme-text-quaternary)] whitespace-nowrap leading-tight mt-0.5 block truncate"
               :title="entry.fullTimeRange"
             >
               {{ entry.duration }}
@@ -42,11 +42,11 @@
       </div>
       
       <!-- Empty State -->
-      <div v-if="!hasEvents" class="flex flex-col items-center justify-center h-32 px-2 text-center">
-        <div class="w-6 h-6 rounded-full bg-[var(--theme-bg-tertiary)]/50 flex items-center justify-center mb-2">
-          <div class="w-2 h-2 rounded-full bg-[var(--theme-text-quaternary)]"></div>
+      <div v-if="!hasEvents" class="flex flex-col items-center justify-center h-24 sm:h-32 px-0.5 xs:px-1 sm:px-2 text-center">
+        <div class="w-3 h-3 xs:w-4 xs:h-4 sm:w-6 sm:h-6 rounded-full bg-[var(--theme-bg-tertiary)]/50 flex items-center justify-center mb-1 sm:mb-2">
+          <div class="w-1 h-1 xs:w-1.5 xs:h-1.5 sm:w-2 sm:h-2 rounded-full bg-[var(--theme-text-quaternary)]"></div>
         </div>
-        <span class="text-[9px] text-[var(--theme-text-quaternary)] leading-tight">No events</span>
+        <span class="text-[7px] xs:text-[8px] sm:text-[9px] text-[var(--theme-text-quaternary)] leading-tight">{{ isMobile ? 'None' : 'No events' }}</span>
       </div>
     </div>
   </div>
@@ -56,10 +56,13 @@
 import { computed } from 'vue'
 import type { HookEvent } from '../types'
 import type { GroupedEvent } from '../types/grouping'
+import { useMediaQuery } from '../composables/useMediaQuery'
 
 interface TimestampEntry {
   id: string
   time: string
+  shortTime: string
+  veryShortTime: string
   endTime?: string
   duration?: string
   fullTime: string
@@ -74,6 +77,7 @@ const props = defineProps<{
   scrollTop?: number
 }>()
 
+const { isMobile, isTablet } = useMediaQuery()
 const hasEvents = computed(() => props.events.length > 0)
 
 const timestampEntries = computed<TimestampEntry[]>(() => {
@@ -89,6 +93,8 @@ const timestampEntries = computed<TimestampEntry[]>(() => {
       return {
         id: `group-${groupedEvent.id}`,
         time: formatTime(startTime),
+        shortTime: formatShortTime(startTime),
+        veryShortTime: formatVeryShortTime(startTime),
         endTime: formatTime(endTime),
         duration: duration,
         fullTime: formatFullTime(startTime),
@@ -101,6 +107,8 @@ const timestampEntries = computed<TimestampEntry[]>(() => {
       return {
         id: `event-${event.id}`,
         time: formatTime(event.timestamp),
+        shortTime: formatShortTime(event.timestamp),
+        veryShortTime: formatVeryShortTime(event.timestamp),
         fullTime: formatFullTime(event.timestamp),
         isGrouped: false,
         height: calculateEventHeight(event),
@@ -114,6 +122,20 @@ const formatTime = (timestamp?: number) => {
   if (!timestamp) return '--:--'
   const date = new Date(timestamp)
   return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+}
+
+const formatShortTime = (timestamp?: number) => {
+  if (!timestamp) return '--'
+  const date = new Date(timestamp)
+  return date.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })
+}
+
+const formatVeryShortTime = (timestamp?: number) => {
+  if (!timestamp) return '--'
+  const date = new Date(timestamp)
+  const hours = date.getHours()
+  const minutes = date.getMinutes()
+  return `${hours}:${minutes.toString().padStart(2, '0')}`
 }
 
 const formatFullTime = (timestamp?: number) => {
@@ -163,7 +185,9 @@ const calculateGroupedEventHeight = (groupedEvent: GroupedEvent) => {
   /* Ensure proper stacking and positioning */
   position: sticky;
   left: 0;
-  z-index: 10;
+  z-index: 20;
+  /* Fix scroll issues on mobile */
+  -webkit-overflow-scrolling: touch;
 }
 
 .timestamp-column::after {
@@ -185,9 +209,15 @@ const calculateGroupedEventHeight = (groupedEvent: GroupedEvent) => {
 }
 
 /* Responsive adjustments */
-@media (max-width: 768px) {
+@media (max-width: 639px) {
   .timestamp-column {
     width: 3rem; /* 48px */
+  }
+}
+
+@media (min-width: 640px) and (max-width: 768px) {
+  .timestamp-column {
+    width: 4rem; /* 64px */
   }
 }
 

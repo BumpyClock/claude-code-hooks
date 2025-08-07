@@ -8,8 +8,21 @@ export default {
   theme: {
   	extend: {
   		screens: {
+  			xs: '480px',
+  			sm: '640px',
+  			md: '768px',
+  			lg: '1024px',
+  			xl: '1280px',
+  			'2xl': '1536px',
   			mobile: {
   				max: '699px'
+  			},
+  			tablet: {
+  				min: '700px',
+  				max: '1023px'
+  			},
+  			desktop: {
+  				min: '1024px'
   			}
   		},
   		colors: {
@@ -177,5 +190,18 @@ export default {
     'theme-earth',
     'theme-glass',
     'theme-high-contrast',
+    // Responsive utilities
+    'touch-pan-x',
+    'touch-pan-y',
+    'overflow-x-auto',
+    'overflow-y-hidden',
+    // Mobile-specific classes
+    'sm:block',
+    'sm:inline',
+    'sm:hidden',
+    'mobile:px-2',
+    'mobile:py-2',
+    'tablet:w-80',
+    'desktop:w-96',
   ]
 }

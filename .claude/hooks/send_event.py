@@ -55,6 +55,7 @@ def main():
     parser = argparse.ArgumentParser(description='Send Claude Code hook events to observability server')
     parser.add_argument('--source-app', required=True, help='Source application name')
     parser.add_argument('--event-type', required=True, help='Hook event type (PreToolUse, PostToolUse, etc.)')
+    parser.add_argument('--hook-name', help='Name/identifier of the specific hook calling this script')
     parser.add_argument('--server-url', default='http://localhost:4000/events', help='Server URL')
     parser.add_argument('--add-chat', action='store_true', help='Include chat transcript if available')
     parser.add_argument('--summarize', action='store_true', help='Generate AI summary of the event')
@@ -100,7 +101,7 @@ def main():
     
     # Generate summary if requested
     if args.summarize:
-        summary = generate_event_summary(event_data)
+        summary = generate_event_summary(event_data, hook_name=args.hook_name)
         if summary:
             event_data['summary'] = summary
         # Continue even if summary generation fails

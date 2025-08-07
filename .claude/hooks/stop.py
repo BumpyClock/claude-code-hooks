@@ -10,7 +10,6 @@ import argparse
 import json
 import os
 import sys
-import random
 import subprocess
 from pathlib import Path
 from datetime import datetime
@@ -24,15 +23,7 @@ except ImportError:
     pass  # dotenv is optional
 
 
-def get_completion_messages():
-    """Return list of friendly completion messages."""
-    return [
-        "Work complete!",
-        "All done!",
-        "Task finished!",
-        "Job complete!",
-        "Ready for next task!",
-    ]
+# Removed get_completion_messages() - now handled by llm_client.py
 
 
 def get_tts_script_path():
@@ -67,50 +58,15 @@ def get_tts_script_path():
 def get_llm_completion_message():
     """
     Generate completion message using available LLM services.
-    Priority order: OpenAI > Anthropic > fallback to random message
+    Priority order: Ollama > OpenAI > Anthropic > fallback to random message
 
     Returns:
         str: Generated or fallback completion message
     """
-    # Get current script directory and construct utils/llm path
-    script_dir = Path(__file__).parent
-    llm_dir = script_dir / "utils" / "llm"
-
-    # Try Anthropic second
-    if os.getenv("ANTHROPIC_API_KEY"):
-        anth_script = llm_dir / "anth.py"
-        if anth_script.exists():
-            try:
-                result = subprocess.run(
-                    ["uv", "run", str(anth_script), "--completion"],
-                    capture_output=True,
-                    text=True,
-                    timeout=10,
-                )
-                if result.returncode == 0 and result.stdout.strip():
-                    return result.stdout.strip()
-            except (subprocess.TimeoutExpired, subprocess.SubprocessError):
-                pass
-
-    # Try OpenAI first (highest priority)
-    if os.getenv("OPENAI_API_KEY"):
-        oai_script = llm_dir / "oai.py"
-        if oai_script.exists():
-            try:
-                result = subprocess.run(
-                    ["uv", "run", str(oai_script), "--completion"],
-                    capture_output=True,
-                    text=True,
-                    timeout=10,
-                )
-                if result.returncode == 0 and result.stdout.strip():
-                    return result.stdout.strip()
-            except (subprocess.TimeoutExpired, subprocess.SubprocessError):
-                pass
-
-    # Fallback to random predefined message
-    messages = get_completion_messages()
-    return random.choice(messages)
+    # Import and use the shared LLM client
+    from utils.llm_client import get_completion_message
+    
+    return get_completion_message()
 
 
 def announce_completion():

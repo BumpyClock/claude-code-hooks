@@ -170,6 +170,7 @@ import ChatTranscriptModal from './ChatTranscriptModal.vue';
 import EventDetailsModal from './EventDetailsModal.vue';
 import { Badge, Card } from '@/components/ui'
 import { useAppNames } from '@/composables/useAppNames'
+import { useMediaQuery } from '@/composables/useMediaQuery'
 
 const props = defineProps<{
   event: HookEvent;
@@ -182,6 +183,7 @@ const props = defineProps<{
 
 // Use friendly app names composable
 const { getDisplayName } = useAppNames()
+const { isMobile } = useMediaQuery()
 
 
 

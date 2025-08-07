@@ -1,21 +1,22 @@
 <template>
-  <div class="bg-gradient-to-r from-[var(--theme-bg-primary)]/95 to-[var(--theme-bg-secondary)]/95 backdrop-blur-sm px-3 py-2 mobile:py-2 border-b border-[var(--theme-border-primary)]/20">
-    <div class="flex items-center justify-between mb-3 mobile:flex-col mobile:space-y-2 mobile:items-start">
-      <h3 class="text-xs mobile:text-xs font-medium text-[var(--theme-text-secondary)] flex items-center gap-1.5">
+  <div class="bg-gradient-to-r from-[var(--theme-bg-primary)]/95 to-[var(--theme-bg-secondary)]/95 backdrop-blur-sm px-2 sm:px-3 py-2 border-b border-[var(--theme-border-primary)]/20">
+    <div class="flex items-center justify-between mb-2 sm:mb-3 mobile:flex-col mobile:space-y-2 mobile:items-start">
+      <h3 class="text-xs font-medium text-[var(--theme-text-secondary)] flex items-center gap-1.5">
         <span class="w-1.5 h-1.5 rounded-full bg-gradient-to-br from-green-400 to-green-600 animate-pulse"></span>
-        Live Activity
+        <span class="hidden xs:inline">Live Activity</span>
+        <span class="xs:hidden">Live</span>
       </h3>
-      <div class="flex gap-1 mobile:w-full mobile:justify-center" role="tablist" aria-label="Time range selector">
+      <div class="flex gap-0.5 sm:gap-1 mobile:w-full mobile:justify-center" role="tablist" aria-label="Time range selector">
         <button
           v-for="(range, index) in timeRanges"
           :key="range"
           @click="setTimeRange(range)"
           @keydown="handleTimeRangeKeyDown($event, index)"
           :class="[
-            'px-2 py-0.5 text-xs rounded-md transition-all duration-150 min-w-[28px] min-h-[24px] flex items-center justify-center border shadow-sm',
+            'px-1.5 sm:px-2 py-0.5 text-xs rounded-md transition-all duration-150 min-w-[24px] sm:min-w-[28px] min-h-[20px] sm:min-h-[24px] flex items-center justify-center border shadow-sm touch-manipulation',
             timeRange === range
               ? 'bg-gradient-to-r from-[var(--theme-primary)] to-[var(--theme-primary-dark)] text-white border-[var(--theme-primary-dark)] shadow-md scale-105'
-              : 'bg-[var(--theme-bg-tertiary)]/80 text-[var(--theme-text-primary)] border-[var(--theme-border-primary)]/30 hover:bg-[var(--theme-bg-quaternary)] hover:scale-105 hover:shadow-md'
+              : 'bg-[var(--theme-bg-tertiary)]/80 text-[var(--theme-text-primary)] border-[var(--theme-border-primary)]/30 hover:bg-[var(--theme-bg-quaternary)] active:scale-95 sm:hover:scale-105 sm:hover:shadow-md'
           ]"
           role="tab"
           :aria-selected="timeRange === range"
@@ -45,7 +46,7 @@
         :curve-type="CurveType.MonotoneX"
         :margin="{ left: 10, right: 10, top: 20, bottom: 20 }"
         :custom-tooltip="CustomChartTooltip"
-        class="h-[140px] w-full overflow-hidden"
+        class="h-[100px] sm:h-[120px] md:h-[140px] w-full overflow-hidden"
       >
         <template #default>
           <div />
@@ -56,8 +57,9 @@
         class="absolute inset-0 flex items-center justify-center"
       >
         <div class="flex flex-col items-center gap-2 animate-fadeIn">
-          <div class="w-8 h-8 rounded-full border-2 border-[var(--theme-border-primary)]/30 border-t-[var(--theme-primary)] animate-spin"></div>
-          <p class="text-[var(--theme-text-tertiary)] text-xs font-medium">Waiting for events...</p>
+          <div class="w-6 h-6 sm:w-8 sm:h-8 rounded-full border-2 border-[var(--theme-border-primary)]/30 border-t-[var(--theme-primary)] animate-spin"></div>
+          <p class="text-[var(--theme-text-tertiary)] text-xs font-medium hidden sm:block">Waiting for events...</p>
+          <p class="text-[var(--theme-text-tertiary)] text-xs font-medium sm:hidden">Waiting...</p>
         </div>
       </div>
     </div>
@@ -128,10 +130,12 @@ const chartData = computed(() => {
     (event.timestamp || 0) >= startTime
   );
 
-  const intervalMs = timeRangeMs / 20;
+  // Reduce data points on mobile for better performance
+  const dataPoints = window.innerWidth < 640 ? 15 : 20;
+  const intervalMs = timeRangeMs / dataPoints;
   const intervals: Record<number, Record<string, number>> = {};
 
-  for (let i = 0; i < 20; i++) {
+  for (let i = 0; i < dataPoints; i++) {
     const intervalStart = startTime + (i * intervalMs);
     intervals[intervalStart] = {};
   }

@@ -9,12 +9,12 @@
     <!-- Swimlane Container -->
     <div 
       ref="scrollContainer"
-      class="flex-1 overflow-auto py-3 mobile:py-2 relative"
+      class="flex-1 overflow-auto py-2 sm:py-3 relative touch-pan-x"
       @scroll="handleScroll"
     >
-      <div class="px-4 mobile:px-2">
+      <div class="px-2 sm:px-4">
         <div 
-          class="flex gap-6 min-h-full"
+          class="flex gap-3 sm:gap-6 min-h-full"
           :style="{
             minWidth: needsHorizontalScroll ? 'max-content' : '100%',
             width: needsHorizontalScroll ? 'auto' : '100%'
@@ -24,76 +24,76 @@
         <div
           v-for="lane in sortedLanes"
           :key="lane.sourceApp"
-          class="relative flex-shrink-0 min-h-full border-r border-[var(--theme-border-primary)]/10 last:border-r-0 pr-4 last:pr-0"
+          class="relative flex-shrink-0 min-h-full border-r border-[var(--theme-border-primary)]/10 last:border-r-0 pr-2 sm:pr-4 last:pr-0"
           :style="{
             width: `${calculatedLaneWidth}px`,
-            minWidth: '400px'
+            minWidth: isMobile ? '280px' : isTablet ? '320px' : '400px'
           }"
         >
           <!-- Lane Header -->
           <div 
-            class="sticky top-0 z-20 bg-[var(--theme-bg-primary)]/95 backdrop-blur-lg border-b border-[var(--theme-border-primary)]/20 mb-4 pb-3 rounded-t-lg"
+            class="sticky top-0 z-20 bg-[var(--theme-bg-primary)]/95 backdrop-blur-lg border-b border-[var(--theme-border-primary)]/20 mb-3 sm:mb-4 pb-2 sm:pb-3 rounded-t-lg"
             :style="{ 
               borderTopColor: getHexColorForApp(lane.sourceApp),
               borderTopWidth: '3px'
             }"
           >
-            <div class="flex items-center justify-between px-3 pt-2">
-              <div class="flex items-center gap-3">
+            <div class="flex items-center justify-between px-2 sm:px-3 pt-2">
+              <div class="flex items-center gap-2 sm:gap-3 flex-1 min-w-0">
                 <!-- Collapse Toggle -->
                 <Button
                   variant="ghost"
                   size="sm"
                   @click="toggleLaneCollapsed(lane.sourceApp)"
-                  class="h-6 w-6 p-0 hover:bg-[var(--theme-bg-tertiary)]"
+                  class="h-5 w-5 sm:h-6 sm:w-6 p-0 hover:bg-[var(--theme-bg-tertiary)] flex-shrink-0"
                 >
                   <ChevronDown 
                     :class="[
-                      'h-4 w-4 transition-transform text-[var(--theme-text-tertiary)]',
+                      'h-3 w-3 sm:h-4 sm:w-4 transition-transform text-[var(--theme-text-tertiary)]',
                       isLaneCollapsed(lane.sourceApp) && 'rotate-180'
                     ]"
                   />
                 </Button>
 
                 <!-- Project Info -->
-                <div class="flex items-center gap-3">
+                <div class="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
                   <div 
-                    class="w-3 h-3 rounded-full"
+                    class="w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full flex-shrink-0"
                     :style="{ backgroundColor: getHexColorForApp(lane.sourceApp) }"
                   ></div>
-                  <h3 class="text-sm font-semibold text-[var(--theme-text-primary)] tracking-tight">
+                  <h3 class="text-xs sm:text-sm font-semibold text-[var(--theme-text-primary)] tracking-tight truncate flex-1">
                     {{ lane.sourceApp }}
                   </h3>
-                  <Badge variant="secondary" class="text-xs px-2 py-0.5">
+                  <Badge variant="secondary" class="text-[10px] sm:text-xs px-1.5 sm:px-2 py-0.5 flex-shrink-0">
                     {{ lane.eventCount }}
                   </Badge>
-                  <span v-if="lane.lastActivity" class="text-xs text-[var(--theme-text-tertiary)]">
+                  <span v-if="lane.lastActivity && !isMobile" class="text-[10px] sm:text-xs text-[var(--theme-text-tertiary)] flex-shrink-0">
                     {{ formatLastActivity(lane.lastActivity) }}
                   </span>
                 </div>
               </div>
 
               <!-- Lane Actions -->
-              <div class="flex items-center gap-2">
+              <div class="flex items-center gap-1 sm:gap-2 flex-shrink-0">
                 <!-- Pin Toggle -->
                 <Button
                   variant="ghost"
                   size="sm"
                   @click="toggleLanePinned(lane.sourceApp)"
                   :class="[
-                    'h-6 w-6 p-0',
+                    'h-5 w-5 sm:h-6 sm:w-6 p-0',
                     lane.isPinned 
                       ? 'text-yellow-500 hover:text-yellow-600' 
                       : 'text-[var(--theme-text-tertiary)] hover:text-[var(--theme-text-secondary)]'
                   ]"
                 >
-                  <Pin :class="['h-3 w-3', lane.isPinned && 'fill-current']" />
+                  <Pin :class="['h-2.5 w-2.5 sm:h-3 sm:w-3', lane.isPinned && 'fill-current']" />
                 </Button>
 
                 <!-- Activity Pulse -->
                 <div 
                   v-if="isLaneActive(lane.sourceApp)"
-                  class="w-2 h-2 rounded-full bg-green-500 animate-pulse"
+                  class="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-green-500 animate-pulse flex-shrink-0"
                   title="Recent activity"
                 ></div>
               </div>
@@ -103,10 +103,10 @@
           <!-- Lane Events -->
           <div 
             v-if="!isLaneCollapsed(lane.sourceApp)"
-            class="space-y-3 pl-6 relative flex-1 min-h-0"
+            class="space-y-2 sm:space-y-3 pl-4 sm:pl-6 relative flex-1 min-h-0"
           >
             <!-- Vertical Timeline Line -->
-            <div class="absolute left-8 top-0 bottom-0 w-px bg-gradient-to-b from-[var(--theme-border-primary)]/20 via-[var(--theme-border-primary)]/10 to-transparent"></div>
+            <div class="absolute left-6 sm:left-8 top-0 bottom-0 w-px bg-gradient-to-b from-[var(--theme-border-primary)]/20 via-[var(--theme-border-primary)]/10 to-transparent"></div>
 
             <!-- Empty State -->
             <div v-if="lane.events.length === 0" class="py-8 text-center">
@@ -117,7 +117,7 @@
             </div>
 
             <!-- Event List with Enhanced Animations -->
-            <div class="space-y-3">
+            <div class="space-y-2 sm:space-y-3">
               <template v-for="event in lane.events" :key="getEventKey(event)">
                 <!-- Grouped Event Card with Animation -->
                 <div
@@ -155,23 +155,23 @@
           </div>
 
           <!-- Collapsed State -->
-          <div v-else class="px-3">
-            <div class="flex flex-col items-center gap-3 py-4 text-sm text-[var(--theme-text-tertiary)]">
+          <div v-else class="px-2 sm:px-3">
+            <div class="flex flex-col items-center gap-2 sm:gap-3 py-3 sm:py-4 text-xs sm:text-sm text-[var(--theme-text-tertiary)]">
               <div class="flex -space-x-1">
                 <div
-                  v-for="(session, index) in getUniqueSessions(lane.events).slice(0, 3)"
+                  v-for="session in getUniqueSessions(lane.events).slice(0, isMobile ? 2 : 3)"
                   :key="session"
-                  class="w-6 h-6 rounded-full border-2 border-[var(--theme-bg-primary)] flex items-center justify-center text-xs font-mono"
+                  class="w-5 h-5 sm:w-6 sm:h-6 rounded-full border-2 border-[var(--theme-bg-primary)] flex items-center justify-center text-[10px] sm:text-xs font-mono"
                   :style="{ backgroundColor: getColorForSession(session) }"
                   :title="`Session ${session.slice(0, 8)}`"
                 >
                   {{ session.slice(0, 1).toUpperCase() }}
                 </div>
                 <div
-                  v-if="getUniqueSessions(lane.events).length > 3"
-                  class="w-6 h-6 rounded-full border-2 border-[var(--theme-bg-primary)] bg-[var(--theme-bg-tertiary)] flex items-center justify-center text-xs"
+                  v-if="getUniqueSessions(lane.events).length > (isMobile ? 2 : 3)"
+                  class="w-5 h-5 sm:w-6 sm:h-6 rounded-full border-2 border-[var(--theme-bg-primary)] bg-[var(--theme-bg-tertiary)] flex items-center justify-center text-[10px] sm:text-xs"
                 >
-                  +{{ getUniqueSessions(lane.events).length - 3 }}
+                  +{{ getUniqueSessions(lane.events).length - (isMobile ? 2 : 3) }}
                 </div>
               </div>
               <div class="text-center">
@@ -220,6 +220,7 @@ import { useEventColors } from '../composables/useEventColors'
 import { useGroupingPreferences } from '../composables/useGroupingPreferences'
 import { useEventGrouping } from '../composables/useEventGrouping'
 import { useEventAnimations } from '../composables/useEventAnimations'
+import { useMediaQuery } from '../composables/useMediaQuery'
 
 const props = defineProps<{
   events: HookEvent[]
@@ -240,9 +241,9 @@ const scrollContainer = ref<HTMLElement>()
 const scrollTop = ref(0)
 const { getGradientForSession, getColorForSession, getGradientForApp, getColorForApp, getHexColorForApp } = useEventColors()
 const { groupingPreferences, swimlanePreferences, toggleLaneCollapsed, toggleLanePinned } = useGroupingPreferences()
+const { isMobile, isTablet } = useMediaQuery()
 
 // Dynamic width calculation for swimlanes
-const laneWidth = ref(400) // minimum width
 const containerWidth = ref(0)
 
 // Apply event grouping to raw events (similar to EventTimeline)
@@ -252,7 +253,7 @@ const { groupedEvents, getGroupChangeType } = useEventGrouping(
 )
 
 // Animation system
-const { processEventAnimation, getAnimationClasses, isAnimating } = useEventAnimations()
+const { processEventAnimation, getAnimationClasses } = useEventAnimations()
 
 // Project extraction helper
 const projectOf = (e: HookEvent | GroupedEvent) => {
@@ -356,13 +357,18 @@ const sortedLanes = computed(() => {
 
 // Calculate optimal lane width based on container and number of lanes
 const calculatedLaneWidth = computed(() => {
-  const minWidth = 400
+  // Responsive minimum widths
+  const minWidth = isMobile.value ? 280 : isTablet.value ? 320 : 400
   const laneCount = sortedLanes.value.length
   
   if (laneCount === 0) return minWidth
   
+  // Responsive gap and padding calculations
+  const gapSize = isMobile.value ? 12 : 24 // gap-3 vs gap-6
+  const containerPadding = isMobile.value ? 16 : 32 // px-2 vs px-4
+  
   // Try to fit all lanes in viewport, but respect minimum width
-  const availableWidth = containerWidth.value - (32 + (laneCount - 1) * 24) // padding + gaps
+  const availableWidth = containerWidth.value - (containerPadding + (laneCount - 1) * gapSize)
   const calculatedWidth = Math.max(minWidth, Math.floor(availableWidth / laneCount))
   
   return calculatedWidth
@@ -370,9 +376,12 @@ const calculatedLaneWidth = computed(() => {
 
 // Determine if horizontal scrolling is needed
 const needsHorizontalScroll = computed(() => {
+  const gapSize = isMobile.value ? 12 : 24
+  const containerPadding = isMobile.value ? 16 : 32
+  
   const totalRequiredWidth = sortedLanes.value.length * calculatedLaneWidth.value + 
-                            32 + // container padding
-                            (sortedLanes.value.length - 1) * 24 // gaps
+                            containerPadding + 
+                            (sortedLanes.value.length - 1) * gapSize
   return totalRequiredWidth > containerWidth.value
 })
 
@@ -437,7 +446,7 @@ const scrollToTop = () => {
 const handleScroll = () => {
   if (!scrollContainer.value) return
   
-  const { scrollTop: currentScrollTop, scrollLeft } = scrollContainer.value
+  const { scrollTop: currentScrollTop } = scrollContainer.value
   scrollTop.value = currentScrollTop
   const isAtTop = currentScrollTop < 50
   
@@ -495,7 +504,7 @@ watch(groupedEvents, async (newGrouped, oldGrouped) => {
     
     if ('groupMeta' in event) {
       // For grouped events, check the group change type
-      changeType = getGroupChangeType(event.id)
+      changeType = getGroupChangeType(String(event.id) || 'unknown')
     } else {
       // For individual events, check if we've seen this ID before
       const existsInOld = oldGrouped?.some(e => getEventKey(e) === eventId)
@@ -581,9 +590,38 @@ onUnmounted(() => {
   scroll-behavior: smooth;
 }
 
+/* Mobile-specific improvements */
+@media (max-width: 768px) {
+  .swimlane-container {
+    touch-action: pan-x pan-y;
+    overflow-x: auto;
+    overflow-y: hidden;
+  }
+  
+  /* Reduce motion for mobile performance */
+  @media (prefers-reduced-motion: reduce) {
+    .lane-event-enter-active,
+    .lane-event-leave-active,
+    .lane-event-move {
+      transition: none;
+    }
+    
+    .animate-fade-in,
+    .animate-slide-up,
+    .animate-fade-out,
+    .animate-slide-down,
+    .animate-pulse-gentle,
+    .animate-pulse-brief,
+    .animate-highlight {
+      animation: none;
+    }
+  }
+}
+
 /* Custom scrollbar for webkit browsers */
 ::-webkit-scrollbar {
-  width: 6px;
+  width: 4px;
+  height: 4px;
 }
 
 ::-webkit-scrollbar-track {
@@ -599,6 +637,19 @@ onUnmounted(() => {
 
 ::-webkit-scrollbar-thumb:hover {
   opacity: 0.8;
+}
+
+/* Touch scrolling for mobile */
+@media (max-width: 768px) {
+  .touch-pan-x {
+    -webkit-overflow-scrolling: touch;
+    scroll-behavior: smooth;
+  }
+  
+  ::-webkit-scrollbar {
+    width: 2px;
+    height: 2px;
+  }
 }
 
 /* Enhanced Animation Classes */

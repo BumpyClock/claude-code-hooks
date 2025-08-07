@@ -1,38 +1,38 @@
 <template>
-  <div class="relative max-w-full w-full px-1.5 md:px-2">
+  <div class="relative w-full max-w-full px-1 sm:px-1.5 md:px-2">
     <Card 
-      class="group relative cursor-pointer transition-all duration-200 hover:shadow-lg border border-border/30 hover:border-primary/30 bg-card w-full overflow-visible hover-lift focus-within:ring-2 focus-within:ring-primary/40"
+      class="group relative cursor-pointer transition-all duration-200 hover:shadow-lg border border-border/30 hover:border-primary/30 bg-card w-full max-w-full overflow-hidden hover-lift focus-within:ring-2 focus-within:ring-primary/40 touch-manipulation"
       @click="toggleExpanded"
     >
       <!-- App Color Bar -->
       <div class="absolute left-0 top-0 bottom-0 w-1.5" :style="{ backgroundColor: appHexColor }"></div>
       
-      <div class="pl-4 pr-4 py-2.5 ml-2">
+      <div class="pl-3 pr-3 py-2 ml-1.5 sm:pl-4 sm:pr-4 sm:py-2.5 sm:ml-2">
         <!-- Header -->
-        <div class="flex items-center justify-between mb-1.5">
-          <div class="flex items-center gap-2.5 flex-1">
-            <span class="text-[13px] font-semibold tracking-tight text-[var(--theme-text-primary)] whitespace-nowrap" title="Project">
+        <div class="flex items-center justify-between mb-1.5 min-w-0">
+          <div class="flex items-center gap-1.5 sm:gap-2.5 flex-1 min-w-0 overflow-hidden">
+            <span class="text-xs sm:text-[13px] font-semibold tracking-tight text-[var(--theme-text-primary)] truncate flex-shrink-0 max-w-[120px] sm:max-w-none" title="Project">
               {{ event.source_app }}
             </span>
-            <Badge variant="outline" class="font-mono text-[10px] px-1.5 py-0.5 rounded-sm shrink-0" title="Session">
+            <Badge variant="outline" class="font-mono text-[9px] sm:text-[10px] px-1 sm:px-1.5 py-0.5 rounded-sm shrink-0" title="Session">
               {{ sessionIdShort }}
             </Badge>
-            <Badge variant="soft" class="text-[11px] px-2 py-0.5" :title="`${groupMeta.count} events grouped`">
-              <LayersIcon class="h-3 w-3 mr-1" />
+            <Badge variant="soft" class="text-[10px] sm:text-[11px] px-1.5 sm:px-2 py-0.5 shrink-0" :title="`${groupMeta.count} events grouped`">
+              <LayersIcon class="h-2.5 w-2.5 sm:h-3 sm:w-3 mr-0.5 sm:mr-1" />
               {{ groupMeta.count }}
             </Badge>
           </div>
-          <div class="flex items-center gap-2">
+          <div class="flex items-center gap-1 sm:gap-2 flex-shrink-0">
             <!-- Expand Toggle -->
             <Button
               variant="ghost"
               size="sm"
               @click.stop="toggleGroupExpanded"
-              class="h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
+              class="h-5 w-5 sm:h-6 sm:w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
             >
               <ChevronDown 
                 :class="[
-                  'h-3 w-3 transition-transform text-[var(--theme-text-tertiary)]',
+                  'h-2.5 w-2.5 sm:h-3 sm:w-3 transition-transform text-[var(--theme-text-tertiary)]',
                   isGroupExpanded && 'rotate-180'
                 ]"
               />
@@ -41,29 +41,29 @@
         </div>
 
         <!-- Group Summary -->
-        <div class="flex items-start gap-3">
-          <div class="flex-1 min-w-0">
+        <div class="flex items-start gap-2 sm:gap-3 min-w-0">
+          <div class="flex-1 min-w-0 overflow-hidden">
             <!-- Event Type and Tool -->
-            <div class="flex items-center gap-2 mb-1">
-              <Badge variant="soft" class="gap-1 px-2 py-0.5 text-[11px] leading-4">
-                <component :is="eventIcon" class="h-3.5 w-3.5 text-primary" />
-                <span class="font-medium text-[var(--theme-text-primary)]">{{ event.hook_event_type }}</span>
+            <div class="flex items-center gap-1.5 sm:gap-2 mb-1 min-w-0">
+              <Badge variant="soft" class="gap-1 px-1.5 sm:px-2 py-0.5 text-[10px] sm:text-[11px] leading-4 shrink-0">
+                <component :is="eventIcon" class="h-3 w-3 sm:h-3.5 sm:w-3.5 text-primary" />
+                <span class="font-medium text-[var(--theme-text-primary)] hidden sm:inline">{{ event.hook_event_type }}</span>
               </Badge>
-              <span v-if="groupMeta.tool" class="text-[12px] text-[var(--theme-text-secondary)]">
+              <span v-if="groupMeta.tool" class="text-[11px] sm:text-[12px] text-[var(--theme-text-secondary)] truncate">
                 {{ groupMeta.tool }}
               </span>
             </div>
 
             <!-- Group Description -->
-            <div class="text-[13px] font-medium text-[var(--theme-text-primary)] mb-2">
+            <div class="text-xs sm:text-[13px] font-medium text-[var(--theme-text-primary)] mb-2 line-clamp-2">
               {{ groupSummary }}
             </div>
 
             <!-- Duration Information (simplified) -->
-            <div class="mb-3">
-              <div class="flex items-center gap-2 text-xs text-[var(--theme-text-tertiary)] mb-1">
-                <Clock class="h-3 w-3" />
-                <span>{{ formatDuration(groupMeta.timeRange) }} duration</span>
+            <div class="mb-2 sm:mb-3">
+              <div class="flex items-center gap-1.5 sm:gap-2 text-[11px] sm:text-xs text-[var(--theme-text-tertiary)] mb-1">
+                <Clock class="h-2.5 w-2.5 sm:h-3 sm:w-3 shrink-0" />
+                <span class="truncate">{{ formatDuration(groupMeta.timeRange) }} duration</span>
               </div>
               
               <!-- Progress bar showing time span -->
@@ -79,35 +79,35 @@
             </div>
 
             <!-- File/Command Chips -->
-            <div class="flex flex-wrap gap-1.5 mb-2">
+            <div class="flex flex-wrap gap-1 sm:gap-1.5 mb-2 max-w-full overflow-hidden">
               <Badge 
-                v-for="(chip, i) in displayChips" 
+                v-for="(chip, i) in displayChips.slice(0, isMobile ? 2 : displayChips.length)" 
                 :key="chip + i"
                 variant="outline"
-                class="text-[10px] px-1.5 py-0.5 rounded-sm hover:scale-105 transition-transform cursor-pointer"
+                class="text-[9px] sm:text-[10px] px-1 sm:px-1.5 py-0.5 rounded-sm hover:scale-105 transition-transform cursor-pointer max-w-[120px] truncate"
                 @click.stop="copyToClipboard(chip)"
                 :title="`Click to copy: ${chip}`"
               >
                 {{ chip }}
               </Badge>
               <Badge
-                v-if="groupMeta.chips.length > maxDisplayChips"
+                v-if="groupMeta.chips.length > (isMobile ? 2 : maxDisplayChips)"
                 variant="outline"
-                class="text-[10px] px-1.5 py-0.5 rounded-sm text-[var(--theme-text-tertiary)]"
+                class="text-[9px] sm:text-[10px] px-1 sm:px-1.5 py-0.5 rounded-sm text-[var(--theme-text-tertiary)] shrink-0"
                 @click.stop="showAllChips = !showAllChips"
               >
-                {{ showAllChips ? 'show less' : `+${groupMeta.chips.length - maxDisplayChips}` }}
+                {{ showAllChips ? 'less' : `+${groupMeta.chips.length - (isMobile ? 2 : maxDisplayChips)}` }}
               </Badge>
             </div>
 
             <!-- AI Summary (if available) -->
-            <div v-if="groupMeta.summary" class="text-[12.5px] text-[var(--theme-text-secondary)] leading-5 line-clamp-2 italic">
+            <div v-if="groupMeta.summary" class="text-[11px] sm:text-[12.5px] text-[var(--theme-text-secondary)] leading-4 sm:leading-5 line-clamp-2 italic">
               {{ groupMeta.summary }}
             </div>
           </div>
 
           <!-- Actions -->
-          <div class="flex flex-col gap-1">
+          <div class="hidden sm:flex flex-col gap-1 flex-shrink-0">
             <Button 
               variant="ghost"
               size="sm"
@@ -198,6 +198,7 @@ import EventDetailsModal from './EventDetailsModal.vue'
 import { Button } from '@/components/ui/button'
 import { Badge, Card } from '@/components/ui'
 import { useEventColors } from '../composables/useEventColors'
+import { useMediaQuery } from '../composables/useMediaQuery'
 
 const props = defineProps<{
   event: GroupedEvent
@@ -214,6 +215,7 @@ const selectedChildEvent = ref<HookEvent | null>(null)
 const showChildModal = ref(false)
 
 const { getColorForSession } = useEventColors()
+const { isMobile } = useMediaQuery()
 
 const maxDisplayChips = 6
 
@@ -375,5 +377,39 @@ const copyGroupSummary = async () => {
   .hover-lift:hover {
     transform: translateY(-1px) scale(1.002);
   }
+  
+  /* Disable hover effects on mobile touch */
+  .hover-lift:active {
+    transform: translateY(0) scale(0.98);
+    transition-duration: 0.1s;
+  }
+  
+  /* Force text wrapping on mobile */
+  .group {
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+  }
+  
+  /* Improve touch target size */
+  .group button {
+    min-height: 44px;
+    min-width: 44px;
+  }
+}
+
+/* Ensure proper text truncation */
+.line-clamp-1 {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.line-clamp-2 {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  line-height: 1.4;
 }
 </style>

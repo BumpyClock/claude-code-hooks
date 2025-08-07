@@ -3,15 +3,30 @@
     <div class="absolute inset-0 pointer-events-none"></div>
 
     <header class="border-b border-[var(--theme-border-primary)]/10 bg-[var(--theme-bg-primary)]">
-      <div class="px-4 py-3 flex items-center justify-between">
+      <div class="px-2 sm:px-4 py-2 sm:py-3 flex items-center justify-between">
         <div class="sr-only">App header</div>
-        <div class="flex items-center gap-3">
-          <div class="w-7 h-7 rounded-md bg-[var(--theme-bg-tertiary)] flex items-center justify-center border border-[var(--theme-border-primary)]/40">
-            <svg class="w-4 h-4 text-[var(--theme-text-secondary)]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 13h18M5 17h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
+        
+        <!-- Left side - Logo and Title -->
+        <div class="flex items-center gap-2 sm:gap-3 flex-shrink-0">
+          <div class="w-6 h-6 sm:w-7 sm:h-7 rounded-md bg-[var(--theme-bg-tertiary)] flex items-center justify-center border border-[var(--theme-border-primary)]/40">
+            <svg class="w-3 h-3 sm:w-4 sm:h-4 text-[var(--theme-text-secondary)]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 13h18M5 17h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
           </div>
-          <h1 class="text-sm font-semibold text-[var(--theme-text-secondary)] tracking-wide">Claude Monitor</h1>
+          <h1 class="text-xs sm:text-sm font-semibold text-[var(--theme-text-secondary)] tracking-wide hidden xs:block">Claude Monitor</h1>
+          <h1 class="text-xs font-semibold text-[var(--theme-text-secondary)] tracking-wide xs:hidden">CM</h1>
         </div>
-        <div class="flex items-center gap-3">
+
+        <!-- Mobile Menu Button -->
+        <Button
+          variant="ghost"
+          size="sm"
+          class="md:hidden h-8 w-8 p-0"
+          @click="showMobileMenu = !showMobileMenu"
+        >
+          <component :is="showMobileMenu ? X : Menu" class="h-4 w-4" />
+        </Button>
+
+        <!-- Desktop Navigation -->
+        <div class="hidden md:flex items-center gap-3">
           <!-- Add Project Button -->
           <Button
             size="sm"
@@ -20,14 +35,14 @@
             @click="showHookInstaller = true"
           >
             <Plus class="w-3 h-3" />
-            Add Project
+            <span class="hidden lg:inline">Add Project</span>
           </Button>
           
-          <!-- Filters moved to header -->
+          <!-- Desktop Filters -->
           <div class="flex items-center gap-2">
             <!-- Project Filter -->
             <Select v-model="localSelectedProject" @update:model-value="updateSelectedProject">
-              <SelectTrigger class="h-8 text-xs w-[140px] bg-[var(--theme-bg-primary)] border-[var(--theme-border-primary)]/40 text-[var(--theme-text-secondary)] hover:bg-[var(--theme-bg-tertiary)]">
+              <SelectTrigger class="h-8 text-xs w-[120px] lg:w-[140px] bg-[var(--theme-bg-primary)] border-[var(--theme-border-primary)]/40 text-[var(--theme-text-secondary)] hover:bg-[var(--theme-bg-tertiary)]">
                 <SelectValue placeholder="All Projects" />
               </SelectTrigger>
               <SelectContent class="bg-[var(--theme-bg-primary)] border-[var(--theme-border-primary)]/40">
@@ -54,8 +69,8 @@
             
             <!-- Session Filter -->
             <Select v-model="filters.sessionId" @update:model-value="updateSessionId">
-              <SelectTrigger class="h-8 text-xs w-[120px] bg-[var(--theme-bg-primary)] border-[var(--theme-border-primary)]/40 text-[var(--theme-text-secondary)] hover:bg-[var(--theme-bg-tertiary)]">
-                <SelectValue placeholder="All Sessions" />
+              <SelectTrigger class="h-8 text-xs w-[100px] lg:w-[120px] bg-[var(--theme-bg-primary)] border-[var(--theme-border-primary)]/40 text-[var(--theme-text-secondary)] hover:bg-[var(--theme-bg-tertiary)]">
+                <SelectValue placeholder="Sessions" />
               </SelectTrigger>
               <SelectContent class="bg-[var(--theme-bg-primary)] border-[var(--theme-border-primary)]/40">
                 <SelectItem value="__ALL_SESSIONS__" class="text-[var(--theme-text-secondary)] hover:bg-[var(--theme-bg-tertiary)]">All Sessions</SelectItem>
@@ -73,8 +88,8 @@
             
             <!-- Event Type Filter -->
             <Select v-model="filters.eventType" @update:model-value="updateEventType">
-              <SelectTrigger class="h-8 text-xs w-[120px] bg-[var(--theme-bg-primary)] border-[var(--theme-border-primary)]/40 text-[var(--theme-text-secondary)] hover:bg-[var(--theme-bg-tertiary)]">
-                <SelectValue placeholder="All Types" />
+              <SelectTrigger class="h-8 text-xs w-[100px] lg:w-[120px] bg-[var(--theme-bg-primary)] border-[var(--theme-border-primary)]/40 text-[var(--theme-text-secondary)] hover:bg-[var(--theme-bg-tertiary)]">
+                <SelectValue placeholder="Types" />
               </SelectTrigger>
               <SelectContent class="bg-[var(--theme-bg-primary)] border-[var(--theme-border-primary)]/40">
                 <SelectItem value="__ALL_TYPES__" class="text-[var(--theme-text-secondary)] hover:bg-[var(--theme-bg-tertiary)]">All Types</SelectItem>
@@ -97,14 +112,14 @@
                 size="sm"
                 @click="setViewMode('unified')"
                 :class="[
-                  'h-8 px-3 rounded-none border-0 text-xs',
+                  'h-8 px-2 lg:px-3 rounded-none border-0 text-xs',
                   viewMode === 'unified' 
                     ? 'bg-primary/10 text-primary' 
                     : 'text-[var(--theme-text-secondary)] hover:bg-[var(--theme-bg-tertiary)]'
                 ]"
               >
-                <ListIcon class="w-3 h-3 mr-1" />
-                Timeline
+                <ListIcon class="w-3 h-3 lg:mr-1" />
+                <span class="hidden lg:inline">Timeline</span>
               </Button>
               <div class="w-px h-4 bg-[var(--theme-border-primary)]/40"></div>
               <Button
@@ -112,14 +127,14 @@
                 size="sm"
                 @click="setViewMode('swimlanes')"
                 :class="[
-                  'h-8 px-3 rounded-none border-0 text-xs',
+                  'h-8 px-2 lg:px-3 rounded-none border-0 text-xs',
                   viewMode === 'swimlanes' 
                     ? 'bg-primary/10 text-primary' 
                     : 'text-[var(--theme-text-secondary)] hover:bg-[var(--theme-bg-tertiary)]'
                 ]"
               >
-                <Layers class="w-3 h-3 mr-1" />
-                Lanes
+                <Layers class="w-3 h-3 lg:mr-1" />
+                <span class="hidden lg:inline">Lanes</span>
               </Button>
             </div>
             
@@ -135,7 +150,7 @@
                   ]"
                 >
                   <SettingsIcon class="w-3 h-3" />
-                  Grouping
+                  <span class="hidden lg:inline">Grouping</span>
                   <Badge v-if="groupingStats && groupingStats.reductionPercentage > 0" variant="secondary" class="ml-1 text-[10px] px-1">
                     -{{ groupingStats.reductionPercentage }}%
                   </Badge>
@@ -146,11 +161,13 @@
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
+          
+          <!-- Theme Toggle -->
           <DropdownMenu>
             <DropdownMenuTrigger as-child>
               <Button size="sm" variant="outline" class="text-xs gap-1">
                 <component :is="currentThemeIcon" class="w-3 h-3" />
-                {{ themes.autoThemeEnabled.value ? 'Auto' : (themes.state.value.currentTheme === 'dark' ? 'Dark' : 'Light') }}
+                <span class="hidden lg:inline">{{ themes.autoThemeEnabled.value ? 'Auto' : (themes.state.value.currentTheme === 'dark' ? 'Dark' : 'Light') }}</span>
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" class="w-44">
@@ -170,14 +187,180 @@
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
+
+        <!-- Mobile Actions -->
+        <div class="flex md:hidden items-center gap-2">
+          <Button
+            size="sm"
+            variant="outline"
+            class="text-xs p-2 h-8 w-8"
+            @click="showHookInstaller = true"
+          >
+            <Plus class="w-3 h-3" />
+          </Button>
+        </div>
+      </div>
+
+      <!-- Mobile Menu Overlay -->
+      <div v-if="showMobileMenu" class="md:hidden absolute top-full left-0 right-0 z-50 bg-[var(--theme-bg-primary)] border-b border-[var(--theme-border-primary)]/10 shadow-lg">
+        <div class="p-4 space-y-4">
+          <!-- Mobile Filters -->
+          <div class="space-y-3">
+            <div class="text-xs font-medium text-[var(--theme-text-secondary)] mb-2">Filters</div>
+            
+            <!-- Project Filter -->
+            <Select v-model="localSelectedProject" @update:model-value="updateSelectedProject">
+              <SelectTrigger class="h-10 text-sm w-full bg-[var(--theme-bg-primary)] border-[var(--theme-border-primary)]/40 text-[var(--theme-text-secondary)]">
+                <SelectValue placeholder="All Projects" />
+              </SelectTrigger>
+              <SelectContent class="bg-[var(--theme-bg-primary)] border-[var(--theme-border-primary)]/40">
+                <SelectItem value="__ALL__" class="text-[var(--theme-text-secondary)] hover:bg-[var(--theme-bg-tertiary)]">
+                  <div class="flex items-center justify-between w-full">
+                    <span>All Projects</span>
+                    <Badge variant="secondary" class="ml-2">{{ totalFilteredCount }}</Badge>
+                  </div>
+                </SelectItem>
+                <SelectSeparator />
+                <SelectItem 
+                  v-for="project in projectsWithCounts" 
+                  :key="project.name" 
+                  :value="project.name"
+                  class="text-[var(--theme-text-secondary)] hover:bg-[var(--theme-bg-tertiary)]"
+                >
+                  <div class="flex items-center justify-between w-full">
+                    <span>{{ getDisplayName(project.name) }}</span>
+                    <Badge variant="secondary" class="ml-2">{{ project.count }}</Badge>
+                  </div>
+                </SelectItem>
+              </SelectContent>
+            </Select>
+            
+            <!-- Session and Type Filters in Row -->
+            <div class="grid grid-cols-2 gap-3">
+              <Select v-model="filters.sessionId" @update:model-value="updateSessionId">
+                <SelectTrigger class="h-10 text-sm bg-[var(--theme-bg-primary)] border-[var(--theme-border-primary)]/40 text-[var(--theme-text-secondary)]">
+                  <SelectValue placeholder="All Sessions" />
+                </SelectTrigger>
+                <SelectContent class="bg-[var(--theme-bg-primary)] border-[var(--theme-border-primary)]/40">
+                  <SelectItem value="__ALL_SESSIONS__" class="text-[var(--theme-text-secondary)] hover:bg-[var(--theme-bg-tertiary)]">All Sessions</SelectItem>
+                  <SelectSeparator />
+                  <SelectItem 
+                    v-for="session in uniqueSessions" 
+                    :key="session" 
+                    :value="session"
+                    class="text-[var(--theme-text-secondary)] hover:bg-[var(--theme-bg-tertiary)]"
+                  >
+                    {{ session.slice(0, 8) }}...
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+              
+              <Select v-model="filters.eventType" @update:model-value="updateEventType">
+                <SelectTrigger class="h-10 text-sm bg-[var(--theme-bg-primary)] border-[var(--theme-border-primary)]/40 text-[var(--theme-text-secondary)]">
+                  <SelectValue placeholder="All Types" />
+                </SelectTrigger>
+                <SelectContent class="bg-[var(--theme-bg-primary)] border-[var(--theme-border-primary)]/40">
+                  <SelectItem value="__ALL_TYPES__" class="text-[var(--theme-text-secondary)] hover:bg-[var(--theme-bg-tertiary)]">All Types</SelectItem>
+                  <SelectSeparator />
+                  <SelectItem 
+                    v-for="type in uniqueEventTypes" 
+                    :key="type" 
+                    :value="type"
+                    class="text-[var(--theme-text-secondary)] hover:bg-[var(--theme-bg-tertiary)]"
+                  >
+                    {{ type }}
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          <!-- Mobile View Mode Toggle -->
+          <div class="space-y-2">
+            <div class="text-xs font-medium text-[var(--theme-text-secondary)]">View Mode</div>
+            <div class="flex gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                @click="setViewMode('unified'); showMobileMenu = false"
+                :class="[
+                  'flex-1 h-10 text-sm gap-2',
+                  viewMode === 'unified' 
+                    ? 'bg-primary/10 border-primary/40 text-primary' 
+                    : 'text-[var(--theme-text-secondary)]'
+                ]"
+              >
+                <ListIcon class="w-4 h-4" />
+                Timeline
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                @click="setViewMode('swimlanes'); showMobileMenu = false"
+                :class="[
+                  'flex-1 h-10 text-sm gap-2',
+                  viewMode === 'swimlanes' 
+                    ? 'bg-primary/10 border-primary/40 text-primary' 
+                    : 'text-[var(--theme-text-secondary)]'
+                ]"
+              >
+                <Layers class="w-4 h-4" />
+                Lanes
+              </Button>
+            </div>
+          </div>
+
+          <!-- Mobile Theme Toggle -->
+          <div class="space-y-2">
+            <div class="text-xs font-medium text-[var(--theme-text-secondary)]">Theme</div>
+            <div class="grid grid-cols-3 gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                @click="toggleAutoTheme; showMobileMenu = false"
+                :class="[
+                  'h-10 text-sm gap-2',
+                  themes.autoThemeEnabled.value && 'bg-primary/10 border-primary/40 text-primary'
+                ]"
+              >
+                <Monitor class="w-4 h-4" />
+                Auto
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                @click="themes.setTheme('light'); showMobileMenu = false"
+                :class="[
+                  'h-10 text-sm gap-2',
+                  !themes.autoThemeEnabled.value && themes.state.value.currentTheme === 'light' && 'bg-primary/10 border-primary/40 text-primary'
+                ]"
+              >
+                <Sun class="w-4 h-4" />
+                Light
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                @click="themes.setTheme('dark'); showMobileMenu = false"
+                :class="[
+                  'h-10 text-sm gap-2',
+                  !themes.autoThemeEnabled.value && themes.state.value.currentTheme === 'dark' && 'bg-primary/10 border-primary/40 text-primary'
+                ]"
+              >
+                <Moon class="w-4 h-4" />
+                Dark
+              </Button>
+            </div>
+          </div>
+        </div>
       </div>
     </header>
 
     <main class="h-full grid grid-rows-[auto,1fr] min-w-0">
-      <div class="sticky top-0 z-30 px-3 py-3 border-b border-[var(--theme-border-primary)]/10 bg-[var(--theme-bg-primary)]/80 backdrop-blur-xl">
-        <div class="grid grid-cols-1 md:grid-cols-[280px,1fr] gap-3 items-stretch">
-          <Card class="p-3 transition-all duration-200 hover:shadow-lg">
-            <div class="space-y-3">
+      <div class="sticky top-0 z-30 px-2 sm:px-3 py-2 sm:py-3 border-b border-[var(--theme-border-primary)]/10 bg-[var(--theme-bg-primary)]/80 backdrop-blur-xl">
+        <div class="grid grid-cols-1 lg:grid-cols-[300px,1fr] gap-2 sm:gap-3 items-stretch">
+          <Card class="p-2 sm:p-3 transition-all duration-200 hover:shadow-lg">
+            <div class="space-y-2 sm:space-y-3">
               <!-- System Status Header -->
               <div class="flex items-center gap-2">
                 <div class="w-2 h-2 rounded-full bg-gradient-to-r from-blue-500 to-purple-500 animate-pulse"></div>
@@ -185,19 +368,19 @@
               </div>
 
               <!-- System Metrics -->
-              <div class="grid grid-cols-2 gap-3 text-center">
-                <div class="p-2 rounded-md bg-[var(--theme-bg-tertiary)]/30 border border-[var(--theme-border-primary)]/20">
-                  <div class="text-lg font-bold text-[var(--theme-text-secondary)]">{{ events.length }}</div>
-                  <div class="text-[9px] text-[var(--theme-text-tertiary)] uppercase tracking-wide">Total Events</div>
+              <div class="grid grid-cols-2 gap-2 sm:gap-3 text-center">
+                <div class="p-2 sm:p-3 rounded-md bg-[var(--theme-bg-tertiary)]/30 border border-[var(--theme-border-primary)]/20">
+                  <div class="text-base sm:text-lg font-bold text-[var(--theme-text-secondary)]">{{ events.length }}</div>
+                  <div class="text-[8px] sm:text-[9px] text-[var(--theme-text-tertiary)] uppercase tracking-wide leading-tight">Total Events</div>
                 </div>
-                <div class="p-2 rounded-md bg-[var(--theme-bg-tertiary)]/30 border border-[var(--theme-border-primary)]/20">
-                  <div class="text-lg font-bold text-[var(--theme-text-secondary)]">{{ uniqueSessionsCount }}</div>
-                  <div class="text-[9px] text-[var(--theme-text-tertiary)] uppercase tracking-wide">Active Sessions</div>
+                <div class="p-2 sm:p-3 rounded-md bg-[var(--theme-bg-tertiary)]/30 border border-[var(--theme-border-primary)]/20">
+                  <div class="text-base sm:text-lg font-bold text-[var(--theme-text-secondary)]">{{ uniqueSessionsCount }}</div>
+                  <div class="text-[8px] sm:text-[9px] text-[var(--theme-text-tertiary)] uppercase tracking-wide leading-tight">Active Sessions</div>
                 </div>
               </div>
 
               <!-- Mobile Project Filter (hidden on desktop) -->
-              <div class="md:hidden border-t border-[var(--theme-border-primary)]/20 pt-3">
+              <div class="lg:hidden border-t border-[var(--theme-border-primary)]/20 pt-2 sm:pt-3">
                 <div class="text-[10px] text-[var(--theme-text-tertiary)] mb-2 uppercase tracking-wide">Filter by Project</div>
                 <ProjectFilterCards :events="events" :filters="filters as any" v-model:selectedProject="selectedProject" />
               </div>
@@ -263,7 +446,7 @@ import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
 import { Select, SelectContent, SelectItem, SelectSeparator, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Badge } from '@/components/ui/badge'
-import { AlertCircle, Sun, Moon, Monitor, ListIcon, Layers, SettingsIcon, Plus } from 'lucide-vue-next';
+import { AlertCircle, Sun, Moon, Monitor, ListIcon, Layers, SettingsIcon, Plus, Menu, X } from 'lucide-vue-next';
 import { useWebSocket } from './composables/useWebSocket';
 import { useThemes } from './composables/useThemes';
 import { useGroupingPreferences } from './composables/useGroupingPreferences';
@@ -287,6 +470,7 @@ const stickToBottom = ref(true);
 const showThemeManager = ref(false);
 const showThemeMenu = ref(false);
 const showHookInstaller = ref(false);
+const showMobileMenu = ref(false);
 const selectedProject = ref<string>('');
 const localSelectedProject = ref<string>('__ALL__');
 const viewMode = ref<'unified' | 'swimlanes'>('unified');
@@ -361,12 +545,12 @@ const updateSelectedProject = (value: any) => {
   selectedProject.value = (stringValue === '__ALL__' || !stringValue) ? '' : stringValue;
 };
 
-const updateSessionId = (value: string) => {
-  filters.value.sessionId = value || '__ALL_SESSIONS__';
+const updateSessionId = (value: any) => {
+  filters.value.sessionId = String(value) || '__ALL_SESSIONS__';
 };
 
-const updateEventType = (value: string) => {
-  filters.value.eventType = value || '__ALL_TYPES__';
+const updateEventType = (value: any) => {
+  filters.value.eventType = String(value) || '__ALL_TYPES__';
 };
 
 const timelineScrollPosition = ref(0);
