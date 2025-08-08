@@ -358,37 +358,18 @@
 
     <main class="h-full grid grid-rows-[auto,1fr] min-w-0">
       <div class="sticky top-0 z-30 px-2 sm:px-3 py-2 sm:py-3 border-b border-[var(--theme-border-primary)]/10 bg-[var(--theme-bg-primary)]/80 backdrop-blur-xl">
-        <div class="grid grid-cols-1 lg:grid-cols-[300px,1fr] gap-2 sm:gap-3 items-stretch">
-          <Card class="p-2 sm:p-3 transition-all duration-200 hover:shadow-lg">
-            <div class="space-y-2 sm:space-y-3">
-              <!-- System Status Header -->
-              <div class="flex items-center gap-2">
-                <div class="w-2 h-2 rounded-full bg-gradient-to-r from-blue-500 to-purple-500 animate-pulse"></div>
-                <span class="text-xs font-medium text-[var(--theme-text-secondary)]">System Metrics</span>
-              </div>
-
-              <!-- System Metrics -->
-              <div class="grid grid-cols-2 gap-2 sm:gap-3 text-center">
-                <div class="p-2 sm:p-3 rounded-md bg-[var(--theme-bg-tertiary)]/30 border border-[var(--theme-border-primary)]/20">
-                  <div class="text-base sm:text-lg font-bold text-[var(--theme-text-secondary)]">{{ events.length }}</div>
-                  <div class="text-[8px] sm:text-[9px] text-[var(--theme-text-tertiary)] uppercase tracking-wide leading-tight">Total Events</div>
-                </div>
-                <div class="p-2 sm:p-3 rounded-md bg-[var(--theme-bg-tertiary)]/30 border border-[var(--theme-border-primary)]/20">
-                  <div class="text-base sm:text-lg font-bold text-[var(--theme-text-secondary)]">{{ uniqueSessionsCount }}</div>
-                  <div class="text-[8px] sm:text-[9px] text-[var(--theme-text-tertiary)] uppercase tracking-wide leading-tight">Active Sessions</div>
-                </div>
-              </div>
-
-              <!-- Mobile Project Filter (hidden on desktop) -->
-              <div class="lg:hidden border-t border-[var(--theme-border-primary)]/20 pt-2 sm:pt-3">
-                <div class="text-[10px] text-[var(--theme-text-tertiary)] mb-2 uppercase tracking-wide">Filter by Project</div>
-                <ProjectFilterCards :events="events" :filters="filters as any" v-model:selectedProject="selectedProject" />
-              </div>
-            </div>
-          </Card>
-          <Card class="p-0 overflow-visible transition-all duration-200 hover:shadow-lg">
-            <EventHeaderPulse :events="fullyFilteredEvents" :filters="filters as any" :timeline-scroll="timelineScrollPosition" />
-          </Card>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4 items-stretch">
+          <!-- Live Activity Monitor (combined event + token activity) -->
+          <LiveActivityMonitor 
+            :events="fullyFilteredEvents" 
+            :filters="filters as any" 
+            :timeline-scroll="timelineScrollPosition"
+            :ws-connection="ws"
+            :active-sessions-count="uniqueSessionsCount"
+          />
+          
+          <!-- Token Usage Card (simplified, clickable) -->
+          <TokenUsageCard :ws-connection="ws" @open-modal="showTokenModal = true" />
         </div>
       </div>
 
@@ -435,6 +416,13 @@
       @close="showHookInstaller = false"
       @success="handleProjectInstalled"
     />
+    
+    <!-- Token Usage Modal -->
+    <TokenUsageModal 
+      v-if="showTokenModal"
+      :ws-connection="ws"
+      @close="showTokenModal = false"
+    />
   </div>
 </template>
 
@@ -455,12 +443,14 @@ import EventTimeline from './components/EventTimeline.vue';
 import EventSwimlanes from './components/EventSwimlanes.vue';
 import GroupingControls from './components/GroupingControls.vue';
 import StickScrollButton from './components/StickScrollButton.vue';
-import EventHeaderPulse from './components/EventHeaderPulse.vue';
 import ThemeManager from './components/ThemeManager.vue';
 import ProjectFilterCards from './components/ProjectFilterCards.vue';
 import HookInstallerModal from './components/HookInstallerModal.vue';
+import TokenUsageCard from './components/TokenUsageCard.vue';
+import TokenUsageModal from './components/TokenUsageModal.vue';
+import LiveActivityMonitor from './components/LiveActivityMonitor.vue';
 
-const { events, error } = useWebSocket('ws://localhost:4000/stream');
+const { events, error, ws } = useWebSocket('ws://localhost:4000/stream');
 const themes = useThemes();
 const { groupingPreferences, swimlanePreferences } = useGroupingPreferences();
 const { getDisplayName, saveAppMapping } = useAppNames();
@@ -471,6 +461,7 @@ const showThemeManager = ref(false);
 const showThemeMenu = ref(false);
 const showHookInstaller = ref(false);
 const showMobileMenu = ref(false);
+const showTokenModal = ref(false);
 const selectedProject = ref<string>('');
 const localSelectedProject = ref<string>('__ALL__');
 const viewMode = ref<'unified' | 'swimlanes'>('unified');

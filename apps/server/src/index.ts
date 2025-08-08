@@ -10,6 +10,14 @@ import {
   importTheme,
   getThemeStats 
 } from './theme';
+import {
+  getDailyUsage,
+  getMonthlyUsage,
+  getSessionUsage,
+  getBlocksUsage,
+  getLiveBlockData,
+  cleanup as cleanupUsage
+} from './usage';
 import path from 'path';
 
 // Initialize database
@@ -17,6 +25,44 @@ initDatabase();
 
 // Store WebSocket clients
 const wsClients = new Set<any>();
+
+// Live token usage update interval (30 seconds)
+const TOKEN_UPDATE_INTERVAL = 30000;
+let tokenUpdateTimer: Timer | null = null;
+
+// Start periodic token usage updates
+async function startTokenUpdates() {
+  if (tokenUpdateTimer) return;
+  
+  tokenUpdateTimer = setInterval(async () => {
+    if (wsClients.size === 0) return;
+    
+    try {
+      const liveBlockData = await getLiveBlockData();
+      if (liveBlockData.success && liveBlockData.data) {
+        const message = JSON.stringify({ type: 'tokenUsage', data: liveBlockData.data });
+        wsClients.forEach(client => {
+          try {
+            client.send(message);
+          } catch (err) {
+            // Client disconnected, remove from set
+            wsClients.delete(client);
+          }
+        });
+      }
+    } catch (error) {
+      console.error('Error broadcasting token usage:', error);
+    }
+  }, TOKEN_UPDATE_INTERVAL);
+}
+
+// Stop periodic updates
+function stopTokenUpdates() {
+  if (tokenUpdateTimer) {
+    clearInterval(tokenUpdateTimer);
+    tokenUpdateTimer = null;
+  }
+}
 
 // Create Bun server with HTTP and WebSocket support
 const server = Bun.serve({
@@ -509,6 +555,92 @@ const server = Bun.serve({
       }
     }
     
+    // Usage API endpoints
+    
+    // GET /api/usage/daily - Get daily token usage
+    if (url.pathname === '/api/usage/daily' && req.method === 'GET') {
+      const options = {
+        since: url.searchParams.get('since') || undefined,
+        until: url.searchParams.get('until') || undefined,
+        project: url.searchParams.get('project') || undefined,
+        breakdown: url.searchParams.get('breakdown') === 'true',
+        mode: url.searchParams.get('mode') as any || undefined
+      };
+      
+      const result = await getDailyUsage(options);
+      const status = result.success ? 200 : 500;
+      return new Response(JSON.stringify(result), {
+        status,
+        headers: { ...headers, 'Content-Type': 'application/json' }
+      });
+    }
+    
+    // GET /api/usage/monthly - Get monthly token usage
+    if (url.pathname === '/api/usage/monthly' && req.method === 'GET') {
+      const options = {
+        since: url.searchParams.get('since') || undefined,
+        until: url.searchParams.get('until') || undefined,
+        project: url.searchParams.get('project') || undefined,
+        breakdown: url.searchParams.get('breakdown') === 'true',
+        mode: url.searchParams.get('mode') as any || undefined
+      };
+      
+      const result = await getMonthlyUsage(options);
+      const status = result.success ? 200 : 500;
+      return new Response(JSON.stringify(result), {
+        status,
+        headers: { ...headers, 'Content-Type': 'application/json' }
+      });
+    }
+    
+    // GET /api/usage/session - Get session-based token usage
+    if (url.pathname === '/api/usage/session' && req.method === 'GET') {
+      const options = {
+        since: url.searchParams.get('since') || undefined,
+        until: url.searchParams.get('until') || undefined,
+        project: url.searchParams.get('project') || undefined,
+        mode: url.searchParams.get('mode') as any || undefined,
+        order: url.searchParams.get('order') as any || undefined
+      };
+      
+      const result = await getSessionUsage(options);
+      const status = result.success ? 200 : 500;
+      return new Response(JSON.stringify(result), {
+        status,
+        headers: { ...headers, 'Content-Type': 'application/json' }
+      });
+    }
+    
+    // GET /api/usage/blocks - Get billing blocks usage
+    if (url.pathname === '/api/usage/blocks' && req.method === 'GET') {
+      const options = {
+        active: url.searchParams.get('active') === 'true',
+        recent: url.searchParams.get('recent') === 'true',
+        mode: url.searchParams.get('mode') as any || undefined,
+        order: url.searchParams.get('order') as any || undefined,
+        tokenLimit: url.searchParams.get('tokenLimit') ? 
+          (url.searchParams.get('tokenLimit') === 'max' ? 'max' : parseInt(url.searchParams.get('tokenLimit')!)) : 
+          undefined
+      };
+      
+      const result = await getBlocksUsage(options);
+      const status = result.success ? 200 : 500;
+      return new Response(JSON.stringify(result), {
+        status,
+        headers: { ...headers, 'Content-Type': 'application/json' }
+      });
+    }
+    
+    // GET /api/usage/blocks/live - Get live monitoring data
+    if (url.pathname === '/api/usage/blocks/live' && req.method === 'GET') {
+      const result = await getLiveBlockData();
+      const status = result.success ? 200 : 500;
+      return new Response(JSON.stringify(result), {
+        status,
+        headers: { ...headers, 'Content-Type': 'application/json' }
+      });
+    }
+    
     // WebSocket upgrade
     if (url.pathname === '/stream') {
       const success = server.upgrade(req);
@@ -524,13 +656,28 @@ const server = Bun.serve({
   },
   
   websocket: {
-    open(ws) {
+    async open(ws) {
       console.log('WebSocket client connected');
       wsClients.add(ws);
+      
+      // Start token updates if this is the first client
+      if (wsClients.size === 1) {
+        startTokenUpdates();
+      }
       
       // Send recent events on connection
       const events = getRecentEvents(200);
       ws.send(JSON.stringify({ type: 'initial', data: events }));
+      
+      // Send initial token usage data
+      try {
+        const liveBlockData = await getLiveBlockData();
+        if (liveBlockData.success && liveBlockData.data) {
+          ws.send(JSON.stringify({ type: 'tokenUsage', data: liveBlockData.data }));
+        }
+      } catch (error) {
+        console.error('Error sending initial token data:', error);
+      }
     },
     
     message(ws, message) {
@@ -541,6 +688,11 @@ const server = Bun.serve({
     close(ws) {
       console.log('WebSocket client disconnected');
       wsClients.delete(ws);
+      
+      // Stop token updates if no clients remain
+      if (wsClients.size === 0) {
+        stopTokenUpdates();
+      }
     },
     
     error(ws, error) {
@@ -553,3 +705,19 @@ const server = Bun.serve({
 console.log(`🚀 Server running on http://localhost:${server.port}`);
 console.log(`📊 WebSocket endpoint: ws://localhost:${server.port}/stream`);
 console.log(`📮 POST events to: http://localhost:${server.port}/events`);
+console.log(`📈 Token usage API: http://localhost:${server.port}/api/usage/*`);
+
+// Graceful shutdown handlers
+process.on('SIGINT', () => {
+  console.log('\nShutting down server...');
+  stopTokenUpdates();
+  cleanupUsage();
+  process.exit(0);
+});
+
+process.on('SIGTERM', () => {
+  console.log('\nShutting down server...');
+  stopTokenUpdates();
+  cleanupUsage();
+  process.exit(0);
+});

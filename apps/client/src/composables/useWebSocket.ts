@@ -8,8 +8,8 @@ export function useWebSocket(url: string) {
   const error = ref<string | null>(null);
   const isLoadingHistorical = ref(false);
   const hasMoreHistorical = ref(true);
+  const wsRef = ref<WebSocket | null>(null);
   
-  let ws: WebSocket | null = null;
   let reconnectTimeout: number | null = null;
   
   // Get max events from environment variable or use default
@@ -17,7 +17,8 @@ export function useWebSocket(url: string) {
   
   const connect = () => {
     try {
-      ws = new WebSocket(url);
+      const ws = new WebSocket(url);
+      wsRef.value = ws;
       
       ws.onopen = () => {
         console.log('WebSocket connected');
@@ -92,9 +93,9 @@ export function useWebSocket(url: string) {
       reconnectTimeout = null;
     }
     
-    if (ws) {
-      ws.close();
-      ws = null;
+    if (wsRef.value) {
+      wsRef.value.close();
+      wsRef.value = null;
     }
   };
 
@@ -187,6 +188,7 @@ export function useWebSocket(url: string) {
     isLoadingHistorical,
     hasMoreHistorical,
     loadMoreHistoricalEvents,
-    handleScroll
+    handleScroll,
+    ws: wsRef // Export WebSocket connection ref directly
   };
 }

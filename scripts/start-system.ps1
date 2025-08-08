@@ -12,6 +12,11 @@ if ($Help) {
     exit 0
 }
 
+# Get the directory of this script
+$scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
+# Get the project root directory (parent of scripts)
+$projectRoot = Split-Path -Parent $scriptDir
+
 # Colors
 function Write-ColorText($text, $color = "White") {
     Write-Host $text -ForegroundColor $color
@@ -33,6 +38,9 @@ function Test-PortInUse($port) {
         return $true
     }
 }
+
+# Set working directory to project root
+Set-Location $projectRoot
 
 # Check if ports are already in use
 if (Test-PortInUse 4000) {
